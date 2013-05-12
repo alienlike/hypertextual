@@ -1,0 +1,5 @@
+virtualenv --distribute venv
+source venv/bin/activate
+pip install Flask
+pip install Chameleon
+svn checkout http://google-diff-match-patch.googlecode.com/svn/trunk/python2 diff_match_patch
