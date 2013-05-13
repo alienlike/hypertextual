@@ -1,18 +1,17 @@
-{% extends "layout.html" %}
-{% block body %}
-
-<h3>{{ page_name }}</h3>
-
-<div>
-<span data-binding="text: name">name</span>
-</div>
-
-<div>
-<p data-binding="text: text">text</p>
-</div>
-
-<div>
-<button>Edit</button>
-</div>
-
-{% endblock %}
+<metal:main
+    xmlns:tal="http://xml.zope.org/namespaces/tal"
+    xmlns:metal="http://xml.zope.org/namespaces/metal"
+    use-macro="load: layout.html">
+    <tal:block metal:fill-slot="content">
+        <h3 tal:content="'page: %s' % page_name"></h3>
+        <div>
+            <span data-binding="text: name">name</span>
+        </div>
+        <div>
+            <p data-binding="text: text">text</p>
+        </div>
+        <div>
+            <button>Edit</button>
+        </div>
+    </tal:block>
+</metal:main>

@@ -1,5 +1,6 @@
 venv
 diff_match_patch
+*.swp
 
 *.py[cod]
 

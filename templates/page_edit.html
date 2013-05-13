@@ -1,20 +1,19 @@
-{% extends "layout.html" %}
-{% block body %}
-
-<h3>{{ page_name }}</h3>
-
-<div>
-name:<br />
-<input type="text" style="width:300px;" data-binding="value: name" />
-</div>
-
-<div>
-text:<br />
-<textarea rows="20" style="width:500px;" data-binding="value: text"></textarea>
-</div>
-
-<div>
-<button>Save</button>
-</div>
-
-{% endblock %}
+<metal:main
+    xmlns:tal="http://xml.zope.org/namespaces/tal"
+    xmlns:metal="http://xml.zope.org/namespaces/metal"
+    use-macro="load: layout.html">
+    <tal:block metal:fill-slot="content">
+        <h3 tal:content="page_name"></h3>
+        <div>
+            name:<br />
+            <input type="text" style="width:300px;" data-binding="value: name" />
+        </div>
+        <div>
+            text:<br />
+            <textarea rows="20" style="width:500px;" data-binding="value: text"></textarea>
+        </div>
+        <div>
+            <button>Save</button>
+        </div>
+    </tal:block>
+</metal:main>

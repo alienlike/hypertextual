@@ -1,13 +1,16 @@
-<html>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal">
 <head>
-<title>hypertextual</title>
-<script type="text/javascript" src="{{ url_for('static', filename='jquery-1.9.1.min.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='knockout-2.2.1.js') }}"></script>
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <title>hypertextual</title>
+    <script type="text/javascript" tal:attributes="src '%s/static/jquery-1.9.1.min.js' % site_url"></script>
+    <script type="text/javascript" tal:attributes="src '%s/static/knockout-2.2.1.js' % site_url"></script>
+    <tal:block metal:define-slot="header"></tal:block>
 </head>
 <body>
-<b>hypertextual</b>
-<div style="margin-top: 20px;">
-{% block body %}{% endblock %}
-</div>
+    <b>hypertextual</b>
+    <div style="margin-top: 20px;">
+        <tal:block metal:define-slot="content"></tal:block>
+    </div>
 </body>

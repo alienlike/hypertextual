@@ -1,6 +1,10 @@
-{% extends "layout.html" %}
-{% block body %}
+<metal:main
+    xmlns:tal="http://xml.zope.org/namespaces/tal"
+    xmlns:metal="http://xml.zope.org/namespaces/metal"
+    use-macro="load: layout.html">
+    <tal:block metal:fill-slot="content">
 
-<p><a href="nw/">nw home</a></p>
+        <p><a href="nw/">nw home</a></p>
 
-{% endblock %}
+    </tal:block>
+</metal:main>
