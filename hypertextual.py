@@ -1,4 +1,3 @@
-import sqlite3
 from flask import Flask, request, session, g, redirect, url_for, \
              abort, flash
 from contextlib import closing
@@ -14,21 +13,20 @@ templates = PageTemplateLoader(template_path)
 site_url = app.config['SITE_URL']
 
 def connect_db():
-    return sqlite3.connect(app.config['DATABASE'])
+    pass
 
 def init_db():
-    with closing(connect_db()) as db:
-        with app.open_resource('schema.sql') as f:
-            db.cursor().executescript(f.read())
-        db.commit()
+    pass
 
 @app.before_request
 def before_request():
-    g.db = connect_db()
+    # todo: create db connection
+    pass
 
 @app.teardown_request
 def teardown_request(exception):
-    g.db.close()
+    # todo: close db connection
+    pass
 
 @app.route('/')
 def site_home():
