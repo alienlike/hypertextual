@@ -1,6 +1,6 @@
 import os
-from flask import Flask, request, session, g, redirect, url_for, \
-             abort, flash
+from flask import \
+    Flask, request, session, g, redirect, url_for, abort, flash
 from contextlib import closing
 from chameleon import PageTemplateLoader
 from sqlalchemy import create_engine
@@ -14,7 +14,6 @@ template_path = os.path.join(app_dir, 'templates')
 templates = PageTemplateLoader(template_path)
 site_url = app.config['SITE_URL']
 engine = create_engine(app.config['CONN_STR'])
-session = None
 
 def init_db():
     from models.base import DeclarativeBase
@@ -25,12 +24,13 @@ def init_db():
 
 @app.before_request
 def before_request():
-    session = sessionmaker()
-    session.configure(bind=engine)
+    Session = sessionmaker()
+    Session.configure(bind=engine)
+    g.session = Session()
 
 @app.teardown_request
 def teardown_request(exception):
-    session.close()
+    g.session.close()
 
 @app.route('/')
 def site_home():
