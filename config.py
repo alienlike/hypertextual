@@ -1,4 +1,4 @@
-DATABASE = '/tmp/hypertextual.db'
+CONN_STR = 'postgresql://nw@localhost:5432/hypertextual'
 DEBUG = True
 SECRET_KEY = 'development key'
 USERNAME = 'admin'

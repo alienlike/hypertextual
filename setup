@@ -4,4 +4,5 @@ pip install Flask
 pip install Chameleon
 pip install Markdown
 pip install psycopg2
+pip install sqlalchemy
 svn checkout http://google-diff-match-patch.googlecode.com/svn/trunk/python2 diff_match_patch
