@@ -10,7 +10,7 @@ class Patch(DeclarativeBase):
 
     # columns
     id = Column(Integer, primary_key=True, nullable=False)
-    rev_id = Column(Integer, ForeignKey('Revision.id', ondelete='CASCADE'), nullable=False)
+    rev_id = Column(Integer, ForeignKey('rev.id', ondelete='CASCADE'), nullable=False)
     patch_text = Column(String, nullable=False)
     create_ts = Column(DateTime, default=datetime.now, nullable=False)
 

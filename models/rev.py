@@ -10,7 +10,7 @@ class Revision(DeclarativeBase):
 
     # columns
     id = Column(Integer, primary_key=True, nullable=False)
-    page_id = Column(Integer, ForeignKey('Page.id', ondelete='CASCADE'), nullable=False)
+    page_id = Column(Integer, ForeignKey('page.id', ondelete='CASCADE'), nullable=False)
     create_ts = Column(DateTime, nullable=False, default=datetime.now)
 
     # relationships

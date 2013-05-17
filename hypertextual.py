@@ -1,7 +1,6 @@
 import os
 from flask import \
     Flask, request, session, g, redirect, url_for, abort, flash
-from contextlib import closing
 from chameleon import PageTemplateLoader
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -9,23 +8,24 @@ from sqlalchemy.orm import sessionmaker
 app = Flask(__name__)
 app.config.from_object('config')
 
-app_dir = os.path.dirname(os.path.abspath(__file__))
-template_path = os.path.join(app_dir, 'templates')
+app_path = os.path.dirname(os.path.abspath(__file__))
+template_path = os.path.join(app_path, 'templates')
 templates = PageTemplateLoader(template_path)
 site_url = app.config['SITE_URL']
-engine = create_engine(app.config['CONN_STR'])
+
+conn_str = app.config['CONN_STR']
+engine = create_engine(conn_str)
+Session = sessionmaker()
+Session.configure(bind=engine)
 
 def init_db():
     from models.base import DeclarativeBase
-    engine = create_engine(app.config['CONN_STR'])
     DeclarativeBase.metadata.bind = engine
     DeclarativeBase.metadata.drop_all()
     DeclarativeBase.metadata.create_all(engine)
 
 @app.before_request
 def before_request():
-    Session = sessionmaker()
-    Session.configure(bind=engine)
     g.session = Session()
 
 @app.teardown_request
@@ -75,7 +75,7 @@ def user_page_rev_json(user, rev, page_name):
 if __name__ == '__main__':
     # extra_files are any files beyond .py files that should
     # trigger a reload when changed (in debug mode only)
-    extra_dirs = ['%s/static' % app_dir, '%s/templates' % app_dir]
+    extra_dirs = ['%s/static' % app_path, '%s/templates' % app_path]
     extra_files = extra_dirs[:]
     for extra_dir in extra_dirs:
         for dirname, dirs, files in os.walk(extra_dir):
