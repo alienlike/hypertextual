@@ -4,6 +4,7 @@ from flask import \
 from chameleon import PageTemplateLoader
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from models import *
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -27,10 +28,23 @@ def init_db():
 @app.before_request
 def before_request():
     g.session = Session()
+    a = g.session.query(Account).filter(Account.uid=='alienlike').first()
+    if a is None:
+        a = Account()
+        a.uid = 'alienlike'
+        a.pw = 'secret'
+        g.session.add(a)
+        g.session.commit()
+    g.current_user = a
 
 @app.teardown_request
 def teardown_request(exception):
     g.session.close()
+
+@app.errorhandler(404)
+def page_not_found(e):
+    t = templates['404.html']
+    return t.render(site_url=site_url), 404
 
 @app.route('/')
 def site_home():
@@ -43,15 +57,53 @@ def user_home(user):
 
 @app.route('/<user>/<page_name>/')
 def user_page(user, page_name):
-    # todo: retrieve page from db
-    t = templates['page_view.html']
-    return t.render(site_url=site_url, page_name=page_name)
+
+    # get user if exists
+    a = g.session.query(Account).filter(Account.uid==user).first()
+    if a is None:
+        abort(404)
+
+    # get page if it exists
+    p = g.session.query(Page).\
+            filter(Page.name_for_url==page_name).\
+            filter(Page.owner==a).first()
+
+    # if page found
+    if p is not None:
+        t = templates['page_view.html']
+        return t.render(site_url=site_url, page=p)
+
+    # if user is current user, redirect to the edit page
+    elif user == g.current_user.uid:
+        url = url_for('user_page_edit', user=user, page_name=page_name)
+        return redirect(url)
+
+    # otherwise show 404
+    else:
+        abort(404)
 
 @app.route('/<user>/<page_name>/edit')
 def user_page_edit(user, page_name):
-    # todo: retrieve page from db
-    t = templates['page_edit.html']
-    return t.render(site_url=site_url, page_name=page_name)
+
+    # if page user is current user
+    if user == g.current_user.uid:
+
+        # get page if it exists
+        p = g.session.query(Page).\
+                filter(Page.name_for_url==page_name).\
+                filter(Page.owner==g.current_user).first()
+
+        # create a new page if none exists
+        if p is None:
+            p = Page()
+
+        # render the edit page
+        t = templates['page_edit.html']
+        return t.render(site_url=site_url, page=p)
+
+    # otherwise show 404
+    else:
+        abort(404)
 
 @app.route('/<user>/<page_name>/save', methods=['POST'])
 def user_page_save(user, page_name):

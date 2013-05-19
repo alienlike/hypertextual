@@ -3,7 +3,7 @@
     xmlns:metal="http://xml.zope.org/namespaces/metal"
     use-macro="load: layout.html">
     <tal:block metal:fill-slot="content">
-        <h3 tal:content="page_name"></h3>
+        <h3 tal:content="page.name_for_url"></h3>
         <div>
             name:<br />
             <input type="text" style="width:300px;" data-binding="value: name" />

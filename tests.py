@@ -30,10 +30,6 @@ class TestBasic(TestBase):
         a = Account()
         a.uid = 'samiam'
         a.pw = 'secret'
-        DBSession.add(a)
-        DBSession.flush()
-        self.assertTrue(a.id is not None)
-        print 'account id = %s' % a.id
 
         p = Page()
         p.owner = a
@@ -41,10 +37,26 @@ class TestBasic(TestBase):
         p.title = 'Home'
         p.orig_text = 'my home page yo'
         p.curr_text = p.orig_text
-        DBSession.add(p)
+
+        r = Revision()
+        r.page = p
+
+        pt = Patch()
+        pt.rev = r
+        pt.patch_text = 'blah blah'
+
+        self.assertEqual(a.id, None)
+        self.assertEqual(p.id, None)
+        self.assertEqual(r.id, None)
+        self.assertEqual(pt.id, None)
+
+        DBSession.add(pt)
         DBSession.flush()
-        self.assertTrue(p.id is not None)
-        print 'page id = %s' % p.id
+
+        self.assertEqual( type(a.id), int)
+        self.assertEqual( type(p.id), int )
+        self.assertEqual( type(r.id), int )
+        self.assertEqual( type(pt.id), int )
 
 if __name__ == '__main__':
     unittest.main()
