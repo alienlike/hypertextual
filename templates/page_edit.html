@@ -3,17 +3,19 @@
     xmlns:metal="http://xml.zope.org/namespaces/metal"
     use-macro="load: layout.html">
     <tal:block metal:fill-slot="content">
-        <h3 tal:content="page.name_for_url"></h3>
-        <div>
-            name:<br />
-            <input type="text" style="width:300px;" data-binding="value: name" />
-        </div>
-        <div>
-            text:<br />
-            <textarea rows="20" style="width:500px;" data-binding="value: text"></textarea>
-        </div>
-        <div>
-            <button>Save</button>
-        </div>
+        <form method="post">
+            <h3 tal:content="page.name_for_url"></h3>
+            <div>
+                name:<br />
+                <input type="text" style="width:300px;" id="title" name="title" tal:attributes="value page.title" readonly="readonly" />
+            </div>
+            <div>
+                text:<br />
+                <textarea rows="20" style="width:500px;" id="text" name="text" tal:content="page.curr_text"></textarea>
+            </div>
+            <div>
+                <button type="submit">Save</button>
+            </div>
+        </form>
     </tal:block>
 </metal:main>

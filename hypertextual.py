@@ -46,6 +46,10 @@ def page_not_found(e):
     t = templates['404.html']
     return t.render(site_url=site_url), 404
 
+@app.route('/favicon.ico/<stuff>')
+def favicon(stuff):
+    return ""
+
 @app.route('/')
 def site_home():
     t = templates['index.html']
@@ -82,7 +86,7 @@ def user_page(user, page_name):
     else:
         abort(404)
 
-@app.route('/<user>/<page_name>/edit')
+@app.route('/<user>/<page_name>/edit', methods=['POST', 'GET'])
 def user_page_edit(user, page_name):
 
     # if page user is current user
@@ -90,25 +94,40 @@ def user_page_edit(user, page_name):
 
         # get page if it exists
         p = g.session.query(Page).\
-                filter(Page.name_for_url==page_name).\
-                filter(Page.owner==g.current_user).first()
+            filter(Page.name_for_url==page_name).\
+            filter(Page.owner==g.current_user).first()
 
         # create a new page if none exists
         if p is None:
             p = Page()
+            p.name_for_url = page_name
+            p.title = page_name # todo: fix this
+            p.owner = g.current_user
 
-        # render the edit page
-        t = templates['page_edit.html']
-        return t.render(site_url=site_url, page=p)
+        if request.method == 'GET':
+
+            # render the edit page
+            t = templates['page_edit.html']
+            return t.render(site_url=site_url, page=p)
+
+        elif request.method == 'POST':
+
+            # add page to session if it is newly created
+            if p.id is None:
+                g.session.add(p)
+
+            # persist
+            page_text = request.form['text']
+            p.create_rev(page_text)
+            g.session.commit()
+
+            # mosey on
+            url = url_for('user_page', user=user, page_name=page_name)
+            return redirect(url)
 
     # otherwise show 404
     else:
         abort(404)
-
-@app.route('/<user>/<page_name>/save', methods=['POST'])
-def user_page_save(user, page_name):
-    # todo: write page to db
-    pass
 
 # routes to work on later
 
@@ -125,6 +144,22 @@ def user_page_rev_json(user, rev, page_name):
     return '%s page: %s (rev %s) - json' % (user, page_name, rev)
 
 if __name__ == '__main__':
+
+    import argparse
+    parser = argparse.ArgumentParser(description='Development Server Help')
+    parser.add_argument("-d", "--debug", action="store_true", dest="debug_mode",
+        help="run in debug mode (for use with PyCharm)", default=False)
+    parser.add_argument("-p", "--port", dest="port",
+        help="port of server (default:%(default)s)", type=int, default=5000)
+
+    cmd_args = parser.parse_args()
+    app_options = {"port": cmd_args.port }
+
+    if cmd_args.debug_mode:
+        app_options["debug"] = True
+        app_options["use_debugger"] = False
+        app_options["use_reloader"] = False
+
     # extra_files are any files beyond .py files that should
     # trigger a reload when changed (in debug mode only)
     extra_dirs = ['%s/static' % app_path, '%s/templates' % app_path]
@@ -136,5 +171,7 @@ if __name__ == '__main__':
                     filename = os.path.join(dirname, filename)
                     if os.path.isfile(filename):
                         extra_files.append(filename)
+    app_options["extra_files"] = extra_files
+
     # run the app
-    app.run(extra_files=extra_files)
+    app.run(**app_options)

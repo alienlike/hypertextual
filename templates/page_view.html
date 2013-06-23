@@ -5,10 +5,10 @@
     <tal:block metal:fill-slot="content">
         <h3 tal:content="'page: %s' % page.name_for_url"></h3>
         <div>
-            <span data-binding="text: name">name</span>
+            <span tal:content="page.title">title</span>
         </div>
         <div>
-            <p data-binding="text: text">text</p>
+            <p tal:content="page.curr_text">text</p>
         </div>
         <div>
             <button>Edit</button>

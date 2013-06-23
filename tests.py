@@ -2,7 +2,7 @@ import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from config import CONN_STR_TEST
-from models import DBSession, DeclarativeBase, Account, Page, Revision, Patch
+from models import DBSession, DeclarativeBase, Account, Page, Revision
 
 class TestBase(unittest.TestCase):
 
@@ -37,26 +37,22 @@ class TestBasic(TestBase):
         p.title = 'Home'
         p.orig_text = 'my home page yo'
         p.curr_text = p.orig_text
+        p.curr_rev_num = 0
 
         r = Revision()
+        r.rev_num = 0
         r.page = p
-
-        pt = Patch()
-        pt.rev = r
-        pt.patch_text = 'blah blah'
 
         self.assertEqual(a.id, None)
         self.assertEqual(p.id, None)
         self.assertEqual(r.id, None)
-        self.assertEqual(pt.id, None)
 
-        DBSession.add(pt)
+        DBSession.add(r)
         DBSession.flush()
 
         self.assertEqual( type(a.id), int)
         self.assertEqual( type(p.id), int )
         self.assertEqual( type(r.id), int )
-        self.assertEqual( type(pt.id), int )
 
 if __name__ == '__main__':
     unittest.main()
