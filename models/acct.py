@@ -10,9 +10,10 @@ class Account(DeclarativeBase):
 
     # columns
     id = Column(Integer, primary_key=True, nullable=False)
-    uid = Column(String, unique=True, nullable=False)
-    pw = Column(String, nullable=False)
     create_ts = Column(DateTime, nullable=False, default=datetime.now)
 
+    uid = Column(String, unique=True, nullable=False)
+    pw = Column(String, nullable=False)
+
     # relationship
-    pages = relationship('Page', order_by='Page.id', backref='owner')
+    pages = relationship('Page', order_by='Page.id', backref='acct')

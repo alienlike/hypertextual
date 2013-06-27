@@ -1,6 +1,5 @@
 import unittest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from config import CONN_STR_TEST
 from models import DBSession, DeclarativeBase, Account, Page, Revision
 
@@ -32,8 +31,8 @@ class TestBasic(TestBase):
         a.pw = 'secret'
 
         p = Page()
-        p.owner = a
-        p.name_for_url = '_home'
+        p.acct = a
+        p.page_name = '_home'
         p.title = 'Home'
         p.orig_text = 'my home page yo'
         p.curr_text = p.orig_text
@@ -53,6 +52,32 @@ class TestBasic(TestBase):
         self.assertEqual( type(a.id), int)
         self.assertEqual( type(p.id), int )
         self.assertEqual( type(r.id), int )
+
+    def test_create_page_name(self):
+
+        a = Account()
+        a.uid = 'samiam'
+        a.pw = 'secret'
+
+        p = Page()
+        p.set_title(DBSession, a, '!@#% Home')
+        p.orig_text = 'my !@#% home page yo'
+        p.curr_text = p.orig_text
+        p.curr_rev_num = 0
+        p.acct = a
+
+        DBSession.add(p)
+        DBSession.flush()
+
+        p2 = Page()
+        p2.set_title(DBSession, a, 'Home')
+        p2.orig_text = 'my home page yo'
+        p2.curr_text = p2.orig_text
+        p2.curr_rev_num = 0
+        p2.acct = a
+
+        self.assertEqual(p.page_name, "home")
+        self.assertEqual(p2.page_name, "home-2")
 
 if __name__ == '__main__':
     unittest.main()

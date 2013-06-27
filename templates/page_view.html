@@ -3,15 +3,14 @@
     xmlns:metal="http://xml.zope.org/namespaces/metal"
     use-macro="load: layout.html">
     <tal:block metal:fill-slot="content">
-        <h3 tal:content="'page: %s' % page.name_for_url"></h3>
         <div>
             <span tal:content="page.title">title</span>
         </div>
         <div>
-            <p tal:content="page.curr_text">text</p>
+            <pre tal:content="page.curr_text">text</pre>
         </div>
         <div>
-            <button>Edit</button>
+            <a href="./edit">Edit</a>
         </div>
     </tal:block>
 </metal:main>

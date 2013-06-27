@@ -46,9 +46,13 @@ def page_not_found(e):
     t = templates['404.html']
     return t.render(site_url=site_url), 404
 
-@app.route('/favicon.ico/<stuff>')
-def favicon(stuff):
-    return ""
+@app.route('/robots.txt')
+def robots_txt():
+    return abort(404)
+
+@app.route('/favicon.ico')
+def favicon_ico():
+    return abort(404)
 
 @app.route('/')
 def site_home():
@@ -69,8 +73,8 @@ def user_page(user, page_name):
 
     # get page if it exists
     p = g.session.query(Page).\
-            filter(Page.name_for_url==page_name).\
-            filter(Page.owner==a).first()
+            filter(Page.page_name==page_name).\
+            filter(Page.acct==a).first()
 
     # if page found
     if p is not None:
@@ -94,15 +98,15 @@ def user_page_edit(user, page_name):
 
         # get page if it exists
         p = g.session.query(Page).\
-            filter(Page.name_for_url==page_name).\
-            filter(Page.owner==g.current_user).first()
+            filter(Page.page_name==page_name).\
+            filter(Page.acct==g.current_user).first()
 
         # create a new page if none exists
         if p is None:
             p = Page()
-            p.name_for_url = page_name
+            p.page_name = page_name
             p.title = page_name # todo: fix this
-            p.owner = g.current_user
+            p.acct = g.current_user
 
         if request.method == 'GET':
 
@@ -145,6 +149,7 @@ def user_page_rev_json(user, rev, page_name):
 
 if __name__ == '__main__':
 
+    # set up some args to enable debugging in flask
     import argparse
     parser = argparse.ArgumentParser(description='Development Server Help')
     parser.add_argument("-d", "--debug", action="store_true", dest="debug_mode",
@@ -161,7 +166,7 @@ if __name__ == '__main__':
         app_options["use_reloader"] = False
 
     # extra_files are any files beyond .py files that should
-    # trigger a reload when changed (in debug mode only)
+    # trigger a reload when changed (in debug mode, but not in flask)
     extra_dirs = ['%s/static' % app_path, '%s/templates' % app_path]
     extra_files = extra_dirs[:]
     for extra_dir in extra_dirs:
