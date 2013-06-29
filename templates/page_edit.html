@@ -2,6 +2,9 @@
     xmlns:tal="http://xml.zope.org/namespaces/tal"
     xmlns:metal="http://xml.zope.org/namespaces/metal"
     use-macro="load: layout.html">
+    <tal:block metal:fill-slot="header">
+        <title><tal:block replace="page.title" /> - hypertextual</title>
+    </tal:block>
     <tal:block metal:fill-slot="content">
         <form method="post">
             <h3 tal:content="page.page_name"></h3>

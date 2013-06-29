@@ -15,7 +15,7 @@ class Page(DeclarativeBase):
     acct_id = Column(Integer, ForeignKey('acct.id', ondelete='CASCADE'), nullable=False)
     create_ts = Column(DateTime, default=datetime.now)
 
-    page_name = Column(String, nullable=False)
+    page_name = Column(String, nullable=True)
     title = Column(String, nullable=False)
     orig_text = Column(String, nullable=False)
     curr_text = Column(String, nullable=False)
@@ -24,6 +24,11 @@ class Page(DeclarativeBase):
     # relationships
     revs = relationship('Revision', order_by='Revision.id', backref='page', primaryjoin='Page.id==Revision.page_id')
     acct = None #-> Account.pages
+
+    def __init__(self):
+        self.orig_text = ''
+        self.curr_text = ''
+        self.curr_rev_num = 0
 
     def set_title(self, session, account, title):
 
@@ -92,6 +97,7 @@ class Page(DeclarativeBase):
         elif rev_num == self.curr_rev_num:
             text = self.curr_text
         else:
+            # todo: troubleshoot this code
             dmp = diff_match_patch()
             patches = []
             for rev in self.revs[1:rev_num+1]:
