@@ -5,11 +5,12 @@
 <head>
     <script type="text/javascript" tal:attributes="src '%s/static/jquery-1.9.1.min.js' % site_url"></script>
     <script type="text/javascript" tal:attributes="src '%s/static/knockout-2.2.1.js' % site_url"></script>
+    <link rel="stylesheet" type="text/css" tal:attributes="href '%s/static/styles.css' % site_url">
     <tal:block metal:define-slot="header"></tal:block>
 </head>
 <body>
-    <b>hypertextual</b>
-    <div style="margin-top: 20px;">
-        <tal:block metal:define-slot="content"></tal:block>
-    </div>
+<a tal:attributes="href site_url">hypertextual</a>
+<div style="margin-top: 20px;">
+    <tal:block metal:define-slot="content"></tal:block>
+</div>
 </body>

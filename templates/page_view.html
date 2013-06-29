@@ -7,13 +7,16 @@
     </tal:block>
     <tal:block metal:fill-slot="content">
         <div>
-            <span tal:content="page.title">title</span>
+            <span class="page-title" tal:content="page.title">title</span> -
+            <a tal:condition="page.curr_rev_num==rev" tal:attributes="href '%s?action=edit' % page.get_url()">Edit</a>
+            <a tal:condition="page.curr_rev_num!=rev" tal:attributes="href page.get_url()">Go to latest revision</a>
         </div>
         <div>
-            <pre tal:content="page.get_text_for_rev(rev)">text</pre>
+            <tal:block replace="structure page.get_html_for_rev(session, rev)"></tal:block>
         </div>
-        <div tal:condition="page.curr_rev_num==rev">
-            <a href="./edit">Edit</a>
+        <hr>
+        <div class="page-footer">
+            Latest revision: <tal:block content="page.curr_rev_num"></tal:block>
         </div>
     </tal:block>
 </metal:main>

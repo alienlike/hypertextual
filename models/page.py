@@ -1,9 +1,13 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm.exc import NoResultFound
 from .base import DeclarativeBase
 from .rev import Revision
+from config import SITE_URL
 from diff_match_patch.diff_match_patch import diff_match_patch
+from markdown import markdown
+from markdown.extensions.wikilinks import WikiLinkExtension
 
 class Page(DeclarativeBase):
 
@@ -20,6 +24,7 @@ class Page(DeclarativeBase):
     orig_text = Column(String, nullable=False)
     curr_text = Column(String, nullable=False)
     curr_rev_num = Column(Integer, nullable=False)
+    use_markdown = Column(Boolean, nullable=False)
 
     # relationships
     revs = relationship('Revision', order_by='Revision.id', backref='page', primaryjoin='Page.id==Revision.page_id')
@@ -28,7 +33,23 @@ class Page(DeclarativeBase):
     def __init__(self):
         self.orig_text = ''
         self.curr_text = ''
-        self.curr_rev_num = 0
+        self.curr_rev_num = None
+        self.use_markdown = True
+
+    def get_url(self, rev=None):
+
+        # start with uid
+        url = '%s/%s' % (SITE_URL, self.acct.uid)
+
+        # add rev num if required
+        if rev is not None and rev != self.curr_rev_num:
+            url += '/%s' % rev
+
+        # add page name if required
+        if self.page_name is not None:
+            url += '/%s' % self.page_name
+
+        return url
 
     def set_title(self, session, account, title):
 
@@ -73,36 +94,72 @@ class Page(DeclarativeBase):
     # Generate a new revision by diffing the new text against the current text.
     def create_rev(self, new_text):
 
-        # create the new revision
-        rev = Revision()
-        rev.rev_num = len(self.revs) # zero-based
-        self.curr_rev_num = rev.rev_num
-        self.revs.append(rev)
-
-        if self.curr_rev_num == 0:
-            self.orig_text = new_text
+        if self.curr_rev_num is None:
+            rev = Revision()
+            rev.rev_num = 0
             rev.patch_text = None
-        else:
+            self.revs.append(rev)
+            self.curr_rev_num = 0
+            self.orig_text = new_text
+            self.curr_text = new_text
+
+        elif new_text != self.curr_text:
+            rev = Revision()
+            rev.rev_num = self.curr_rev_num + 1
             dmp = diff_match_patch()
             patches = dmp.patch_make(self.curr_text, new_text)
             rev.patch_text = dmp.patch_toText(patches)
+            self.revs.append(rev)
+            self.curr_rev_num = rev.rev_num
+            self.curr_text = new_text
 
-        self.curr_text = new_text
-
-    # Get the text for a particular revision by applying patches to the text of the original revision.
+    # Get the text for a particular revision
     def get_text_for_rev(self, rev_num):
-
         if rev_num == 0:
             text = self.orig_text
         elif rev_num == self.curr_rev_num:
             text = self.curr_text
         else:
-            # todo: troubleshoot this code
+            # apply successive patches until the text for the
+            # requested version has been reconstructed
             dmp = diff_match_patch()
-            patches = []
+            text = self.orig_text
             for rev in self.revs[1:rev_num+1]:
-                patch = dmp.patch_fromText(rev.patch_text)
-                patches.append(patch)
-            text = dmp.patch_apply(patches, self.orig_text)[0]
-
+                patches = dmp.patch_fromText(rev.patch_text)
+                text = dmp.patch_apply(patches, text)[0]
         return text
+
+    def build_url(self, session, label, base, end):
+
+        # todo: get wiki links to match : and | as well
+        from .acct import Account
+        i = label.find(':')
+        if i >= 0:
+            uid = label[:i]
+            title = label[i+1:]
+        else:
+            uid = self.acct.uid
+            title = label
+        try:
+            page = session.query(Page).\
+                join(Account.pages).\
+                filter(Page.title==title, Account.uid==uid).one()
+            url = page.get_url()
+        except NoResultFound:
+            # todo: check against current user as well as page owner
+            if uid==self.acct.uid:
+                url = '%s/%s?action=create&title=%s' % (base, uid, title)
+            else:
+                url = '#'
+
+        return url
+
+    def get_html_for_rev(self, session, rev_num):
+        text = self.get_text_for_rev(rev_num)
+        build_url = lambda l,b,e: self.build_url(session, l, b, e)
+        if self.use_markdown:
+            linkExt = WikiLinkExtension(configs=[('build_url', build_url), ('base_url', SITE_URL)])
+            html = markdown(text, extensions=[linkExt])
+        else:
+            html = '<pre>%s</pre>' % text
+        return html

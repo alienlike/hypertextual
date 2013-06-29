@@ -1,0 +1,16 @@
+body {
+    font-family: Consolas, "Liberation Mono", Courier, monospace;
+    font-size: 13px;
+}
+
+a {
+    color: #000000;
+}
+
+.page-title {
+    font-weight: bold;
+}
+
+.page-footer {
+    font-style: italic;
+}

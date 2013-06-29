@@ -32,10 +32,10 @@ def init_db():
 @app.before_request
 def before_request():
     g.session = Session()
-    a = g.session.query(Account).filter(Account.uid=='alienlike').first()
+    a = g.session.query(Account).filter(Account.uid=='nw').first()
     if a is None:
         a = Account()
-        a.uid = 'alienlike'
+        a.uid = 'nw'
         a.pw = 'secret'
         g.session.add(a)
         g.session.commit()
@@ -77,221 +77,154 @@ def site_home():
     t = templates['index.html']
     return t.render(site_url=site_url)
 
-# render a user home page
-@app.route('/<uid>/')
+@app.route('/<uid>/', methods=['POST', 'GET'])
 def user_home(uid):
 
     # get account if exists
     try:
-        a = g.session.query(Account).filter(Account.uid==uid).one()
+        acct = g.session.query(Account).filter(Account.uid==uid).one()
     except NoResultFound:
         abort(404)
 
-    # get home page if exists
-    try:
-        p = g.session.query(Page).\
-            filter(Page.page_name==None).\
-            filter(Page.acct==a).one()
-    except NoResultFound:
-        if a == g.current_user:
-            # create home page for current user if it doesn't exist
-            # todo: do this on account creation
-            p = Page()
-            p.title = 'Home'
-            p.page_name = None
-            p.acct = a
-            g.session.add(p)
-            g.session.commit()
+    # get any arguments
+    action = request.args.get('action','').strip()
+    title = request.args.get('title','').strip()
+
+    if action == 'create' and title != '' and uid == g.current_user.uid:
+        page = g.session.query(Page).\
+            filter(Page.title==title).\
+            filter(Page.acct==acct).first()
+        if page:
+            # if a page by this title exists, redirect to the page
+            url = url_for('user_page', uid=uid, page_name=page.page_name)
+            return redirect(url)
         else:
-            abort(404)
+            return page_create(acct, title)
+    else:
+        # get home page if exists
+        try:
+            page = g.session.query(Page).\
+                filter(Page.page_name==None).\
+                filter(Page.acct==acct).one()
+        except NoResultFound:
+            if acct == g.current_user:
+                # create home page for current user if it doesn't exist
+                # todo: do this on account creation
+                page = Page()
+                page.title = 'Home'
+                page.page_name = None
+                page.create_rev('Welcome to hypertextual. This is your home page.')
+                page.acct = acct
+                g.session.add(page)
+                g.session.commit()
+            else:
+                abort(404)
+        if action == 'edit' and uid == g.current_user.uid:
+            return page_edit(page)
+        elif request.method == 'GET':
+            return page_view(page)
+        else:
+            url = url_for('user_home', uid=uid)
+            return redirect(url)
 
-    # render
-    t = templates['page_view.html']
-    return t.render(site_url=site_url, page=p, rev=p.curr_rev_num)
-
-# render a user page
-@app.route('/<uid>/<page_name>/')
+@app.route('/<uid>/<page_name>/', methods=['POST', 'GET'])
 def user_page(uid, page_name):
 
     # get account if exists
     try:
-        a = g.session.query(Account).filter(Account.uid==uid).one()
+        acct = g.session.query(Account).filter(Account.uid==uid).one()
     except NoResultFound:
         abort(404)
 
     # get page if exists
     try:
-        p = g.session.query(Page).\
-            filter(Page.page_name==page_name).\
-            filter(Page.acct==a).one()
+        page = g.session.query(Page).\
+        filter(Page.page_name==page_name).\
+        filter(Page.acct==acct).one()
     except NoResultFound:
         abort(404)
 
-    # render
-    t = templates['page_view.html']
-    return t.render(site_url=site_url, page=p, rev=p.curr_rev_num)
+    action = request.args.get('action','').strip()
 
-# edit a user home page
-@app.route('/<uid>/edit/', methods=['POST', 'GET'])
-def user_home_edit(uid):
-
-    # if current user is not the owner, show 404
-    if uid != g.current_user.uid:
-        abort(404)
-
-    # get home page if exists
-    try:
-        p = g.session.query(Page).\
-            filter(Page.page_name==None).\
-            filter(Page.acct==g.current_user).one()
-    except NoResultFound:
-        abort(404)
-
-    if request.method == 'GET':
-
-        # render the edit page
-        t = templates['page_edit.html']
-        return t.render(site_url=site_url, page=p)
-
-    elif request.method == 'POST':
-
-        # persist
-        page_text = request.form['text']
-        p.create_rev(page_text)
-        g.session.commit()
-
-        # redirect to view page
-        url = url_for('user_home', uid=uid)
-        return redirect(url)
-
-# edit a user page
-@app.route('/<uid>/<page_name>/edit', methods=['POST', 'GET'])
-def user_page_edit(uid, page_name):
-
-    # if current user is not the owner, show 404
-    if uid != g.current_user.uid:
-        abort(404)
-
-    # get page if it exists
-    try:
-        p = g.session.query(Page).\
-            filter(Page.page_name==page_name).\
-            filter(Page.acct==g.current_user).one()
-    except NoResultFound:
-        abort(404)
-
-    # show 404 if not found
-    if p is None:
-        abort(404)
-
-    if request.method == 'GET':
-
-        # render the edit page
-        t = templates['page_edit.html']
-        return t.render(site_url=site_url, page=p)
-
-    elif request.method == 'POST':
-
-        # persist
-        page_text = request.form['text']
-        p.create_rev(page_text)
-        g.session.commit()
-
+    if (action != '' and uid != g.current_user.uid) or (action == '' and request.method != 'GET'):
         # redirect to view page
         url = url_for('user_page', uid=uid, page_name=page_name)
         return redirect(url)
+    elif action == 'edit':
+        return page_edit(page)
+    else:
+        return page_view(page)
 
-# create a user page
-@app.route('/<uid>/create/', methods=['POST', 'GET'])
-def user_page_create(uid):
+# view a user page
+def page_view(page):
 
-    # if current user is not the owner, show 404
-    if uid != g.current_user.uid:
-        abort(404)
+    # determine what rev num to use; abort if an invalid rev was provided
+    rev = request.args.get('rev','').strip()
+    try:
+        rev = int(rev)
+    except ValueError:
+        rev = None
+    if rev is None or rev < 0 or rev > page.curr_rev_num:
+        rev = page.curr_rev_num
 
-    title = request.args.get('title', '').strip()
-    if title == '':
-        # todo: create an error template
-        return 'Error: Missing title parameter'
+    t = templates['page_view.html']
+    return t.render(site_url=site_url, page=page, rev=rev, session=g.session)
 
-    # if a page by this name already exists, go to its edit page
-    p = g.session.query(Page).\
-        filter(Page.title==title).\
-        filter(Page.acct==g.current_user).first()
-    if p is not None:
-        url = url_for('user_page_edit', uid=uid, page_name=p.page_name)
-        return redirect(url)
-
-    # create a new page
-    p = Page()
-    p.set_title(g.session, g.current_user, title)
+# edit a page
+def page_edit(page):
 
     if request.method == 'GET':
 
         # render the edit page
         t = templates['page_edit.html']
-        return t.render(site_url=site_url, page=p)
+        return t.render(site_url=site_url, page=page)
 
     elif request.method == 'POST':
 
         # persist
         page_text = request.form['text']
-        p.create_rev(page_text)
-        #g.session.add(p)
-        g.current_user.pages.append(p)
+        page.create_rev(page_text)
         g.session.commit()
 
         # redirect to view page
-        url = url_for('user_page', uid=uid, page_name=p.page_name)
+        if page.page_name is None:
+            url = url_for('user_home', uid=page.acct.uid)
+        else:
+            url = url_for('user_page', uid=page.acct.uid, page_name=page.page_name)
         return redirect(url)
 
-# specific version of a user home page
-@app.route('/<uid>/<int:rev>/')
-def user_page_rev(uid, rev):
+# create a user page
+def page_create(acct, title):
 
-    # get account if exists
-    try:
-        a = g.session.query(Account).filter(Account.uid==uid).one()
-    except NoResultFound:
-        abort(404)
+    # if a page by this name already exists, go to its edit page
+    page = g.session.query(Page).\
+        filter(Page.title==title).\
+        filter(Page.acct==acct).first()
+    if page is not None:
+        url = url_for('user_page_edit', uid=acct.uid, page_name=page.page_name)
+        return redirect(url)
 
-    # get home page if exists
-    try:
-        p = g.session.query(Page).\
-        filter(Page.page_name==None).\
-        filter(Page.acct==a).\
-        filter(Page.curr_rev_num>=rev).one()
-    except NoResultFound:
-        abort(404)
+    # create a new page
+    page = Page()
+    page.set_title(g.session, acct, title)
 
-    # render
-    t = templates['page_view.html']
-    return t.render(site_url=site_url, page=p, rev=rev)
+    if request.method == 'GET':
 
-# specific version of a user page
-@app.route('/<uid>/<int:rev>/<page_name>/')
-def user_page_rev(uid, rev, page_name):
+        # render the edit page
+        t = templates['page_edit.html']
+        return t.render(site_url=site_url, page=page)
 
-    # todo: make edit link go to the right place
+    elif request.method == 'POST':
 
-    # get account if exists
-    try:
-        a = g.session.query(Account).filter(Account.uid==uid).one()
-    except NoResultFound:
-        abort(404)
+        # persist
+        page_text = request.form['text']
+        page.create_rev(page_text)
+        g.current_user.pages.append(page)
+        g.session.commit()
 
-    # get page if exists
-    try:
-        p = g.session.query(Page).\
-        filter(Page.page_name==page_name).\
-        filter(Page.acct==a).\
-        filter(Page.curr_rev_num>=rev).one()
-    except NoResultFound:
-        abort(404)
-
-    # render
-    t = templates['page_view.html']
-    return t.render(site_url=site_url, page=p, rev=rev)
+        # redirect to view page
+        url = url_for('user_page', uid=acct.uid, page_name=page.page_name)
+        return redirect(url)
 
 if __name__ == '__main__':
 
