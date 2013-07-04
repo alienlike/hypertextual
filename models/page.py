@@ -1,13 +1,12 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm.exc import NoResultFound
 from .base import DeclarativeBase
 from .rev import Revision
 from config import SITE_URL
 from diff_match_patch.diff_match_patch import diff_match_patch
 from markdown import markdown
-from markdown.extensions.wikilinks import WikiLinkExtension
+from wikilinks import WikiLinkExtension
 
 class Page(DeclarativeBase):
 
@@ -129,36 +128,10 @@ class Page(DeclarativeBase):
                 text = dmp.patch_apply(patches, text)[0]
         return text
 
-    def build_url(self, session, label, base, end):
-
-        # todo: get wiki links to match : and | as well
-        from .acct import Account
-        i = label.find(':')
-        if i >= 0:
-            uid = label[:i]
-            title = label[i+1:]
-        else:
-            uid = self.acct.uid
-            title = label
-        try:
-            page = session.query(Page).\
-                join(Account.pages).\
-                filter(Page.title==title, Account.uid==uid).one()
-            url = page.get_url()
-        except NoResultFound:
-            # todo: check against current user as well as page owner
-            if uid==self.acct.uid:
-                url = '%s/%s?action=create&title=%s' % (base, uid, title)
-            else:
-                url = '#'
-
-        return url
-
-    def get_html_for_rev(self, session, rev_num):
+    def get_html_for_rev(self, session, current_user, rev_num):
         text = self.get_text_for_rev(rev_num)
-        build_url = lambda l,b,e: self.build_url(session, l, b, e)
         if self.use_markdown:
-            linkExt = WikiLinkExtension(configs=[('build_url', build_url), ('base_url', SITE_URL)])
+            linkExt = WikiLinkExtension(configs=[('session', session), ('current_user', current_user)])
             html = markdown(text, extensions=[linkExt])
         else:
             html = '<pre>%s</pre>' % text

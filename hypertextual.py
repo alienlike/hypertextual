@@ -168,7 +168,7 @@ def page_view(page):
         rev = page.curr_rev_num
 
     t = templates['page_view.html']
-    return t.render(site_url=site_url, page=page, rev=rev, session=g.session)
+    return t.render(site_url=site_url, page=page, rev=rev, session=g.session, current_user=g.current_user)
 
 # edit a page
 def page_edit(page):
