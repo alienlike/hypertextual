@@ -4,8 +4,9 @@ from flask import \
 from chameleon import PageTemplateLoader
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-from models import *
+from sqlalchemy.orm.exc import NoResultFound
+from models import Page, Account
+from render import render_text_to_html, render_markdown_to_html
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -32,10 +33,10 @@ def init_db():
 @app.before_request
 def before_request():
     g.session = Session()
-    a = g.session.query(Account).filter(Account.uid=='nw').first()
+    a = g.session.query(Account).filter(Account.uid=='alienlike').first()
     if a is None:
         a = Account()
-        a.uid = 'nw'
+        a.uid = 'alienlike'
         a.pw = 'secret'
         g.session.add(a)
         g.session.commit()
@@ -167,8 +168,14 @@ def page_view(page):
     if rev is None or rev < 0 or rev > page.curr_rev_num:
         rev = page.curr_rev_num
 
+    text = page.get_text_for_rev(rev)
+    if page.use_markdown:
+        html = render_markdown_to_html(g.session, g.current_user, text)
+    else:
+        html = render_text_to_html(g.session, g.current_user, text)
+
     t = templates['page_view.html']
-    return t.render(site_url=site_url, page=page, rev=rev, session=g.session, current_user=g.current_user)
+    return t.render(site_url=site_url, page=page, rev=rev, session=g.session, current_user=g.current_user, page_html=html)
 
 # edit a page
 def page_edit(page):

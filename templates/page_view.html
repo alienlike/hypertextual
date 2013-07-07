@@ -12,7 +12,7 @@
             <a tal:condition="page.curr_rev_num!=rev" tal:attributes="href page.get_url()">Go to latest revision</a>
         </div>
         <div>
-            <tal:block replace="structure page.get_html_for_rev(session, current_user, rev)"></tal:block>
+            <tal:block replace="structure page_html"></tal:block>
         </div>
         <hr>
         <div class="page-footer">

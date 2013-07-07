@@ -4,7 +4,19 @@ body {
 }
 
 a {
-    color: #000000;
+    color: black;
+}
+
+a.link-same-user {
+    color: orange;
+}
+
+a.link-different-user {
+    color: blue;
+}
+
+a.link-create-page {
+    color: red;
 }
 
 .page-title {

@@ -5,8 +5,6 @@ from .base import DeclarativeBase
 from .rev import Revision
 from config import SITE_URL
 from diff_match_patch.diff_match_patch import diff_match_patch
-from markdown import markdown
-from wikilinks import WikiLinkExtension
 
 class Page(DeclarativeBase):
 
@@ -127,12 +125,3 @@ class Page(DeclarativeBase):
                 patches = dmp.patch_fromText(rev.patch_text)
                 text = dmp.patch_apply(patches, text)[0]
         return text
-
-    def get_html_for_rev(self, session, current_user, rev_num):
-        text = self.get_text_for_rev(rev_num)
-        if self.use_markdown:
-            linkExt = WikiLinkExtension(configs=[('session', session), ('current_user', current_user)])
-            html = markdown(text, extensions=[linkExt])
-        else:
-            html = '<pre>%s</pre>' % text
-        return html
