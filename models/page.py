@@ -67,7 +67,7 @@ class Page(DeclarativeBase):
         page_name = page_name.strip('-')
 
         # limit to 30 chars
-        page_name = page_name[:30].strip('-')
+        page_name = page_name[:100].strip('-')
 
         # prepend underscore to numeric name
         try:

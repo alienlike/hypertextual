@@ -3,9 +3,10 @@
     xmlns:metal="http://xml.zope.org/namespaces/metal"
     use-macro="load: layout.html">
     <tal:block metal:fill-slot="content">
-
+        <div style="margin-bottom: 20px;">
+            <a tal:attributes="href site_url">hypertextual</a>
+        </div>
         <p>Welcome!</p>
         <p>Looking for <a href="/alienlike">alienlike</a>?</p>
-
     </tal:block>
 </metal:main>

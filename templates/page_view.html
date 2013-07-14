@@ -6,6 +6,9 @@
         <title><tal:block replace="page.title" /> - <tal:block replace="page.acct.uid" /> - hypertextual</title>
     </tal:block>
     <tal:block metal:fill-slot="content">
+        <div style="margin-bottom: 20px;">
+            <a tal:attributes="href site_url">hypertextual</a> / <a tal:attributes="href '%s/%s' % (site_url, page.acct.uid)" tal:content="page.acct.uid"></a>
+        </div>
         <div>
             <span class="page-title" tal:content="page.title">title</span> -
             <a tal:condition="page.curr_rev_num==rev" tal:attributes="href '%s?action=edit' % page.get_url()">Edit</a>
