@@ -24,7 +24,6 @@ Session.configure(bind=engine)
 RESERVED_WORDS = ['site','account','edit','create','api','rss','json','xml','html','css','js']
 # also no numerics
 
-@app.route('/site/init-db')
 def init_db():
     from models.base import DeclarativeBase
     DeclarativeBase.metadata.bind = engine
