@@ -185,7 +185,7 @@ def page_edit(page):
 
         # render the edit page
         t = templates['page_edit.html']
-        return t.render(site_url=site_url, page=page)
+        return t.render(site_url=site_url, page=page, acct=page.acct)
 
     elif request.method == 'POST':
 
@@ -220,7 +220,7 @@ def page_create(acct, title):
 
         # render the edit page
         t = templates['page_edit.html']
-        return t.render(site_url=site_url, page=page)
+        return t.render(site_url=site_url, page=page, acct=acct)
 
     elif request.method == 'POST':
 
@@ -250,19 +250,19 @@ if __name__ == '__main__':
         app_options["debug"] = True
         app_options["use_debugger"] = False
         app_options["use_reloader"] = False
-
-    # extra_files are any files beyond .py files that should
-    # trigger a reload when changed (in debug mode, but not in flask)
-    extra_dirs = ['%s/static' % app_path, '%s/templates' % app_path]
-    extra_files = extra_dirs[:]
-    for extra_dir in extra_dirs:
-        for dirname, dirs, files in os.walk(extra_dir):
-            for filename in files:
-                if not filename.startswith('.'): # exclude vim swap files, etc.
-                    filename = os.path.join(dirname, filename)
-                    if os.path.isfile(filename):
-                        extra_files.append(filename)
-    app_options["extra_files"] = extra_files
+    else:
+        # extra_files are any files beyond .py files that should
+        # trigger a reload when changed (in debug mode, but not in flask)
+        extra_dirs = ['%s/static' % app_path, '%s/templates' % app_path]
+        extra_files = extra_dirs[:]
+        for extra_dir in extra_dirs:
+            for dirname, dirs, files in os.walk(extra_dir):
+                for filename in files:
+                    if not filename.startswith('.'): # exclude vim swap files, etc.
+                        filename = os.path.join(dirname, filename)
+                        if os.path.isfile(filename):
+                            extra_files.append(filename)
+        app_options["extra_files"] = extra_files
 
     # run the app
     app.run(**app_options)
