@@ -236,8 +236,7 @@ def page_create(acct, title):
 
 if __name__ == '__main__':
 
-    app_options = dict()
-    app_options['port'] = app.config['PORT']
+    app_options = {'port': app.config['PORT']}
 
     # set up some args to enable debugging in flask
     import argparse
@@ -250,7 +249,7 @@ if __name__ == '__main__':
         app_options["debug"] = True
         app_options["use_debugger"] = False
         app_options["use_reloader"] = False
-    else:
+    elif app.config['DEBUG']:
         # extra_files are any files beyond .py files that should
         # trigger a reload when changed (in debug mode, but not in flask)
         extra_dirs = ['%s/static' % app_path, '%s/templates' % app_path]
