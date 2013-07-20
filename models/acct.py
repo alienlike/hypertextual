@@ -1,4 +1,4 @@
-import bcrypt
+from flaskext.bcrypt import generate_password_hash, check_password_hash
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
@@ -21,7 +21,7 @@ class Account(DeclarativeBase):
     pages = relationship('Page', order_by='Page.id', backref='acct')
 
     def set_password(self, password):
-        self.pw_hash = bcrypt.hashpw(password, bcrypt.gensalt(BCRYPT_COMPLEXITY))
+        self.pw_hash = generate_password_hash(password, BCRYPT_COMPLEXITY)
 
     def reset_password(self, old_password, new_password):
         # first validate the old password, then set to the new password
@@ -32,7 +32,7 @@ class Account(DeclarativeBase):
 
     def validate_password(self, password):
         # validate the password
-        valid = bcrypt.hashpw(password, self.pw_hash) == self.pw_hash
+        valid = check_password_hash(self.pw_hash, password)
         return valid
 
     def parse_bcrypt_complexity(self, bcrypt_hash):

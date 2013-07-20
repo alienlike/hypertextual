@@ -1,5 +1,6 @@
 Chameleon==2.11
 Flask==0.9
+Flask-Bcrypt==0.5.2
 Jinja2==2.6
 Mako==0.8.1
 Markdown==2.3.1
@@ -7,10 +8,9 @@ MarkupSafe==0.18
 SQLAlchemy==0.8.1
 Werkzeug==0.8.3
 alembic==0.5.0
-bcrypt==1.0.2
-cffi==0.6
 distribute==0.6.34
 gunicorn==17.5
 psycopg2==2.5.1
+py-bcrypt==0.3
 pycparser==2.09.1
 wsgiref==0.1.2
