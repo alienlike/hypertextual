@@ -30,7 +30,7 @@ class TestBasic(AlchemyTestBase):
 
         a = Account()
         a.uid = 'samiam'
-        a.pw = 'secret'
+        a.set_password('secret')
 
         p = Page()
         p.acct = a
@@ -54,6 +54,8 @@ class TestBasic(AlchemyTestBase):
         self.assertEqual( type(a.id), int)
         self.assertEqual( type(p.id), int )
         self.assertEqual( type(r.id), int )
+        self.assertTrue( a.validate_password('secret') )
+        self.assertFalse( a.validate_password('seekrit') )
 
     def test_create_page_name(self):
 

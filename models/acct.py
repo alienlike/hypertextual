@@ -15,7 +15,7 @@ class Account(DeclarativeBase):
     create_ts = Column(DateTime, nullable=False, default=datetime.now)
 
     uid = Column(String, unique=True, nullable=False)
-    pw_hash = Column(String, nullable=False)
+    pw_hash = Column(String) # Column(String, nullable=False)
 
     # relationship
     pages = relationship('Page', order_by='Page.id', backref='acct')

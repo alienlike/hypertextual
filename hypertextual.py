@@ -38,7 +38,7 @@ def before_request():
     if a is None:
         a = Account()
         a.uid = 'alienlike'
-        a.pw = 'secret'
+        a.set_password('secret')
         g.session.add(a)
         g.session.commit()
     g.current_user = a
