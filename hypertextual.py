@@ -37,8 +37,15 @@ def init_db():
 
 @app.before_request
 def before_request():
+    # create a db session for this request
     g.session = Session()
-    g.current_user = session.get('current_user', None)
+    # get current_user from session;
+    current_user = session.get('current_user', None)
+    if current_user is not None:
+        # merge with db session to avoid DetachedInstanceError later on
+        g.current_user = g.session.merge(current_user)
+    else:
+        g.current_user = None
 
 @app.teardown_request
 def teardown_request(exception):

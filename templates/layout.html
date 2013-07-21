@@ -10,7 +10,10 @@
 <body>
     <a tal:attributes="href site_url">hypertextual</a>
     <tal:block tal:condition="exists:page">
-        / <a tal:attributes="href '%s/%s' % (site_url, page.acct.uid)" tal:content="page.acct.uid"></a>
+        / <a tal:condition="page.acct" tal:attributes="href '%s/%s' % (site_url, page.acct.uid)" tal:content="page.acct.uid"></a>
+        <tal:block condition="not page.acct">
+            <a tal:condition="exists:acct" tal:attributes="href '%s/%s' % (site_url, acct.uid)" tal:content="acct.uid"></a>
+        </tal:block>
     </tal:block>
     <div style="float: right;">
         <tal:block condition="g.current_user is None">
