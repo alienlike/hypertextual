@@ -4,10 +4,25 @@
       xmlns:metal="http://xml.zope.org/namespaces/metal">
 <head>
     <script type="text/javascript" tal:attributes="src '%s/static/jquery-1.9.1.min.js' % site_url"></script>
-    <script type="text/javascript" tal:attributes="src '%s/static/knockout-2.2.1.js' % site_url"></script>
     <link rel="stylesheet" type="text/css" tal:attributes="href '%s/static/styles.css' % site_url">
     <tal:block metal:define-slot="header"></tal:block>
 </head>
 <body>
-    <tal:block metal:define-slot="content"></tal:block>
+    <a tal:attributes="href site_url">hypertextual</a>
+    <tal:block tal:condition="exists:page">
+        / <a tal:attributes="href '%s/%s' % (site_url, page.acct.uid)" tal:content="page.acct.uid"></a>
+    </tal:block>
+    <div style="float: right;">
+        <tal:block condition="g.current_user is None">
+            <a tal:attributes="href '%s/site/login' % site_url">Log in</a> or
+            <a tal:attributes="href '%s/site/create-account' % site_url">Create account</a>
+        </tal:block>
+        <a tal:condition="g.current_user is not None" tal:attributes="href '%s/site/logout' % site_url">
+            Log out <tal:block content="g.current_user.uid"></tal:block>
+        </a>
+    </div>
+    <hr />
+    <div style="margin-top: 20px;">
+        <tal:block metal:define-slot="content"></tal:block>
+    </div>
 </body>

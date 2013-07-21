@@ -16,21 +16,23 @@ from config import SITE_URL
 #    \]\]                                         (close brackets)
 HT_LINK_RE = r'\[\[(?:[ ]*(?P<uid>[a-zA-Z][a-zA-Z0-9]*)[ ]*::)?(?!.*::)(?P<title>[^|\t\n\r\f\v]+)(?:\|(?P<alias>[^|\t\n\r\f\v]+))?\]\]'
 
-def build_url(session, current_user, uid, title):
+def build_url(session, current_uid, page_uid, link_uid, title):
 
-    if uid is None:
-        uid = current_user.uid
+    # if no link uid, we assume the linked page
+    # belongs to the same user as the linking page
+    if not link_uid:
+        link_uid = page_uid
 
     exists = True
     try:
         page = session.query(Page).\
             join(Account.pages).\
-            filter(Page.title==title, Account.uid==uid).one()
+            filter(Page.title==title, Account.uid==link_uid).one()
         url = page.get_url()
     except NoResultFound:
         exists = False
-        if uid==current_user.uid:
-            url = '%s/%s?action=create&title=%s' % (SITE_URL, uid, title)
+        if page_uid == current_uid:
+            url = '%s/%s?action=create&title=%s' % (SITE_URL, current_uid, title)
         else:
             url = '#'
 
@@ -40,7 +42,8 @@ class HypertextualLinkExtension(Extension):
     def __init__(self, configs):
         # set extension defaults
         self.config = {
-            'current_user' : [None, 'Account instance.'],
+            'current_uid' : [None, 'Account uid.'],
+            'page_uid' : [None, 'Page uid.'],
             'session' : [None, 'SQLAlchemy session instance.'],
             }
 
@@ -64,17 +67,19 @@ class HypertextualLinks(Pattern):
     def handleMatch(self, m):
 
         elems = m.groupdict()
-        uid = elems['uid'].strip() if elems['uid'] is not None else None
+        link_uid = elems['uid'].strip() if elems['uid'] is not None else None
         title = elems['title'].strip() if elems['title'] is not None else None
         alias = elems['alias'].strip() if elems['alias'] is not None else None
 
+        # alias is optional; use page title otherwise
         if not alias:
             alias = title
 
         url, exists = build_url(
             self.config['session'],
-            self.config['current_user'],
-            uid,
+            self.config['current_uid'],
+            self.config['page_uid'],
+            link_uid,
             title
         )
 
@@ -90,9 +95,10 @@ class HypertextualLinks(Pattern):
 
     def _getMeta(self):
         """ Return meta data or config data. """
-        current_user = self.config['current_user']
+        current_uid = self.config['current_uid']
+        page_uid = self.config['page_uid']
         session = self.config['session']
-        return current_user, session
+        return current_uid, page_uid, session
 
 def makeExtension(configs=None):
     return HypertextualLinkExtension(configs=configs)

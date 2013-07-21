@@ -1,0 +1,28 @@
+<metal:main
+        xmlns:tal="http://xml.zope.org/namespaces/tal"
+        xmlns:metal="http://xml.zope.org/namespaces/metal"
+        use-macro="load: layout.html">
+    <tal:block metal:fill-slot="header">
+        <title>Log in - hypertextual</title>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $("#uid").focus().select();
+            });
+        </script>
+    </tal:block>
+    <tal:block metal:fill-slot="content">
+        <form method="post">
+            <table>
+                <tr>
+                    <td>Username:</td>
+                    <td><input type="text" name="uid" id="uid" tal:attributes="value uid" maxlength="30" /></td>
+                </tr>
+                <tr>
+                    <td>Password:</td>
+                    <td><input type="password" name="pw" tal:attributes="value pw" maxlength="100" /></td>
+                </tr>
+            </table>
+            <button type="submit">Log in</button>
+        </form>
+    </tal:block>
+</metal:main>

@@ -2,10 +2,10 @@ import re
 from markdown import markdown
 from htlinks import HypertextualLinkExtension, build_url, HT_LINK_RE
 
-def render_a_tag(session, current_user, match):
+def render_a_tag(session, current_uid, page_uid, match):
 
     elems = match.groupdict()
-    uid = elems['uid'].strip() if elems['uid'] is not None else None
+    link_uid = elems['uid'].strip() if elems['uid'] is not None else None
     title = elems['title'].strip() if elems['title'] is not None else None
     alias = elems['alias'].strip() if elems['alias'] is not None else None
 
@@ -14,8 +14,9 @@ def render_a_tag(session, current_user, match):
 
     url, exists = build_url(
         session,
-        current_user,
-        uid,
+        current_uid,
+        page_uid,
+        link_uid,
         title
     )
 
@@ -28,12 +29,36 @@ def render_a_tag(session, current_user, match):
 
     return html
 
-def render_text_to_html(session, current_user, text):
-    html = re.sub(HT_LINK_RE, lambda m: render_a_tag(session, current_user, m), text)
+def render_text_to_html(session, current_user, page, rev):
+
+    # get the text for the specified revision
+    text = page.get_text_for_rev(rev)
+
+    # get the current user's uid, if available
+    current_uid = None
+    if current_user:
+        current_uid = current_user.uid
+
+    # substititue an appropriate hyperlink for each "hypertext link"
+    html = re.sub(HT_LINK_RE, lambda m: render_a_tag(session, current_uid, page.acct.uid, m), text)
     html = '<pre>%s</pre>' % html
     return html
 
-def render_markdown_to_html(session, current_user, text):
-    linkExt = HypertextualLinkExtension(configs=[('session', session), ('current_user', current_user)])
+def render_markdown_to_html(session, current_user, page, rev):
+
+    # get the text for the specified revision
+    text = page.get_text_for_rev(rev)
+
+    # get the current user's uid, if available
+    current_uid = None
+    if current_user:
+        current_uid = current_user.uid
+
+    # let markdown process the text, but add the hypertext link extension first
+    linkExt = HypertextualLinkExtension(configs=[
+        ('session', session),
+        ('current_uid', current_uid),
+        ('page_uid', page.acct.uid)
+    ])
     html = markdown(text, extensions=[linkExt])
     return html

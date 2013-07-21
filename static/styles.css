@@ -19,8 +19,13 @@ a.link-create-page {
     color: red;
 }
 
+.error-message {
+    color: red;
+}
+
 .page-title {
     font-weight: bold;
+    font-size: 18px;
 }
 
 .page-footer {

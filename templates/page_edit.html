@@ -6,12 +6,9 @@
         <title><tal:block replace="page.title" /> - hypertextual</title>
     </tal:block>
     <tal:block metal:fill-slot="content">
-        <div style="margin-bottom: 20px;">
-            <a tal:attributes="href site_url">hypertextual</a> / <a tal:attributes="href '%s/%s' % (site_url, acct.uid)" tal:content="acct.uid"></a>
-        </div>
         <form method="post">
             <span class="page-title" tal:content="page.title">title</span>
-            <div>
+            <div style="margin: 10px 0 10px 0;">
                 <textarea rows="20" style="width:500px;" id="text" name="text" tal:content="page.curr_text"></textarea>
             </div>
             <div>

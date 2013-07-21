@@ -15,6 +15,7 @@ class Account(DeclarativeBase):
     create_ts = Column(DateTime, nullable=False, default=datetime.now)
 
     uid = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True)
     pw_hash = Column(String) # Column(String, nullable=False)
 
     # relationship
