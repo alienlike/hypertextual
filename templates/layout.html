@@ -15,7 +15,7 @@
             <a tal:condition="exists:acct" tal:attributes="href '%s/%s' % (site_url, acct.uid)" tal:content="acct.uid"></a>
         </tal:block>
     </tal:block>
-    <div style="float: right;">
+    <div id="user-links" style="float: right;">
         <tal:block condition="g.current_user is None">
             <a tal:attributes="href '%s/site/login' % site_url">Log in</a> or
             <a tal:attributes="href '%s/site/create-account' % site_url">Create account</a>
