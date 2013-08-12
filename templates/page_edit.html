@@ -6,10 +6,10 @@
         <title><tal:block replace="page.title" /> - hypertextual</title>
     </tal:block>
     <tal:block metal:fill-slot="content">
-        <form method="post">
+        <form method="post" id="pageEditForm">
             <span class="page-title" tal:content="page.title">title</span>
-            <div style="margin: 10px 0 10px 0;">
-                <textarea rows="20" style="width:500px;" id="text" name="text" tal:content="page.curr_text"></textarea>
+            <div id="pageEditArea">
+                <textarea rows="20" id="text" name="text" tal:content="page.curr_text"></textarea>
             </div>
             <div>
                 <button type="submit">Save</button>

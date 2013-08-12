@@ -3,35 +3,6 @@ body {
     font-size: 13px;
 }
 
-@media only screen
-and (min-device-width : 320px)
-and (max-device-width : 480px) {
-    #user-links {
-        float: none !important;
-        margin-top: 20px;
-    }
-}
-
-@media only screen
-and (min-device-width : 320px)
-and (max-device-width : 480px)
-and (orientation: portrait) {
-    body {
-        -webkit-text-size-adjust: 400%;
-        margin: 30px;
-    }
-}
-
-@media only screen
-and (min-device-width : 320px)
-and (max-device-width : 480px)
-and (orientation: landscape) {
-    body {
-        -webkit-text-size-adjust: 300%;
-        margin: 25px;
-    }
-}
-
 a {
     color: black;
 }
@@ -59,4 +30,81 @@ a.link-create-page {
 
 .page-footer {
     font-style: italic;
+}
+
+.margin-above {
+    margin-top: 20px;
+}
+
+#userLinks {
+    float: right;
+}
+
+div#pageEditArea {
+    margin: 10px 0 10px 0;
+}
+
+#pageEditArea textarea {
+    width: 90%;
+}
+
+/* iphone */
+@media only screen
+and (min-device-width : 320px)
+and (max-device-width : 568px) {
+
+    #userLinks {
+        float: none !important;
+        margin-top: 20px;
+    }
+
+}
+
+/* iphone - portrait */
+@media only screen
+and (min-device-width : 320px)
+and (max-device-width : 568px)
+and (orientation: portrait) {
+
+    body {
+        -webkit-text-size-adjust: 400%;
+        margin: 30px;
+    }
+
+}
+
+/* iphone - landscape */
+@media only screen
+and (min-device-width : 320px)
+and (max-device-width : 568px)
+and (orientation: landscape) {
+
+    body {
+        -webkit-text-size-adjust: 300%;
+        margin: 25px;
+    }
+
+}
+
+/* ipad */
+@media only screen
+and (min-device-width : 768px)
+and (max-device-width : 1024px) {
+
+}
+
+/* ipad - portrait */
+@media only screen
+and (min-device-width : 768px)
+and (max-device-width : 1024px)
+and (orientation : portrait) {
+
+}
+
+/* ipad - landscape */
+@media only screen
+and (min-device-width : 768px)
+and (max-device-width : 1024px)
+and (orientation : landscape) {
+
 }

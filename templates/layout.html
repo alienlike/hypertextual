@@ -15,7 +15,7 @@
             <a tal:condition="exists:acct" tal:attributes="href '%s/%s' % (site_url, acct.uid)" tal:content="acct.uid"></a>
         </tal:block>
     </tal:block>
-    <div id="user-links" style="float: right;">
+    <div id="userLinks">
         <tal:block condition="g.current_user is None">
             <a tal:attributes="href '%s/site/login' % site_url">Log in</a> or
             <a tal:attributes="href '%s/site/create-account' % site_url">Create account</a>
@@ -25,7 +25,7 @@
         </a>
     </div>
     <hr />
-    <div style="margin-top: 20px;">
+    <div class="margin-above">
         <tal:block metal:define-slot="content"></tal:block>
     </div>
 </body>
