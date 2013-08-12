@@ -81,7 +81,7 @@ def login():
     # process form
     if request.method == 'POST':
         # check that uid exists
-        uid = request.form['uid'].strip()
+        uid = request.form['uid'].strip().lower()
         acct = g.session.query(Account).filter(Account.uid==uid).first()
         if acct is not None:
             # validate password
@@ -124,8 +124,8 @@ def create_acct():
     # process form
     if request.method == 'POST':
 
-        uid = request.form['uid'].strip()
-        email = request.form['email'].strip()
+        uid = request.form['uid'].strip().lower()
+        email = request.form['email'].strip().lower()
         pw = request.form['pw']
         pconfirm = request.form['pconfirm']
         valid = True
@@ -385,7 +385,7 @@ def opensearch_xml():
 
 if __name__ == '__main__':
 
-    app_options = {'port': app.config['PORT']}
+    app_options = {'port': app.config['PORT'], 'host': '0.0.0.0', 'use_reloader': True}
 
     # set up some args to enable debugging in flask
     import argparse
