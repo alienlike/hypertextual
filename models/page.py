@@ -1,10 +1,8 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import DeclarativeBase
 from .rev import Revision
-from config import SITE_URL
-from diff_match_patch.diff_match_patch import diff_match_patch
 
 class Page(DeclarativeBase):
 
@@ -21,7 +19,6 @@ class Page(DeclarativeBase):
     orig_text = Column(String, nullable=False)
     curr_text = Column(String, nullable=False)
     curr_rev_num = Column(Integer, nullable=False)
-    use_markdown = Column(Boolean, nullable=False)
 
     # relationships
     revs = relationship('Revision', order_by='Revision.id', backref='page', primaryjoin='Page.id==Revision.page_id')
@@ -31,11 +28,17 @@ class Page(DeclarativeBase):
         self.orig_text = ''
         self.curr_text = ''
         self.curr_rev_num = None
-        self.use_markdown = True
+
+    def use_markdown(self):
+        if self.curr_rev_num is None:
+            return True
+        else:
+            return self.revs[self.curr_rev_num].use_markdown
 
     def get_url(self, rev=None):
 
         # start with uid
+        from config import SITE_URL
         url = '%s/%s' % (SITE_URL, self.acct.uid)
 
         # add rev num if required
@@ -89,26 +92,37 @@ class Page(DeclarativeBase):
         self.page_name = name_to_test
 
     # Generate a new revision by diffing the new text against the current text.
-    def create_rev(self, new_text):
+    def create_rev(self, new_text, use_markdown):
 
+        # first rev
         if self.curr_rev_num is None:
             rev = Revision()
             rev.rev_num = 0
             rev.patch_text = None
+            rev.use_markdown = use_markdown
             self.revs.append(rev)
             self.curr_rev_num = 0
             self.orig_text = new_text
             self.curr_text = new_text
 
+        # subsequent rev
         elif new_text != self.curr_text:
             rev = Revision()
             rev.rev_num = self.curr_rev_num + 1
+            rev.use_markdown = use_markdown
+            from diff_match_patch.diff_match_patch import diff_match_patch
             dmp = diff_match_patch()
             patches = dmp.patch_make(self.curr_text, new_text)
             rev.patch_text = dmp.patch_toText(patches)
             self.revs.append(rev)
             self.curr_rev_num = rev.rev_num
             self.curr_text = new_text
+
+        # change to use_markdown only
+        else:
+            curr_rev = self.revs[self.curr_rev_num]
+            if curr_rev.use_markdown != use_markdown:
+                curr_rev.use_markdown = use_markdown
 
     # Get the text for a particular revision
     def get_text_for_rev(self, rev_num):
@@ -119,6 +133,7 @@ class Page(DeclarativeBase):
         else:
             # apply successive patches until the text for the
             # requested version has been reconstructed
+            from diff_match_patch.diff_match_patch import diff_match_patch
             dmp = diff_match_patch()
             text = self.orig_text
             for rev in self.revs[1:rev_num+1]:

@@ -12,6 +12,10 @@
                 <textarea rows="20" id="text" name="text" tal:content="page.curr_text"></textarea>
             </div>
             <div>
+                <input type="radio" id="markdown" name="use_markdown" value="True" tal:attributes="checked page.use_markdown()"><label for="markdown">Markdown</label>
+                <input type="radio" id="plaintext" name="use_markdown" value="False" tal:attributes="checked not page.use_markdown()"><label for="plaintext">Plain text</label>
+            </div>
+            <div style="margin-top: 10px;">
                 <button type="submit">Save</button>
             </div>
         </form>

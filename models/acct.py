@@ -3,7 +3,6 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 from .base import DeclarativeBase
-from config import BCRYPT_COMPLEXITY
 
 class Account(DeclarativeBase):
 
@@ -22,6 +21,7 @@ class Account(DeclarativeBase):
     pages = relationship('Page', order_by='Page.id', backref='acct')
 
     def set_password(self, password):
+        from config import BCRYPT_COMPLEXITY
         self.pw_hash = generate_password_hash(password, BCRYPT_COMPLEXITY)
 
     def reset_password(self, old_password, new_password):

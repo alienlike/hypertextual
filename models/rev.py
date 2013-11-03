@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from .base import DeclarativeBase
 
 class Revision(DeclarativeBase):
@@ -14,6 +14,7 @@ class Revision(DeclarativeBase):
 
     rev_num = Column(Integer, nullable=False)
     patch_text = Column(String)
+    use_markdown = Column(Boolean, nullable=False)
 
     # relationships
     page = None #-> Page.revs

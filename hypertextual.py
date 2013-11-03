@@ -168,7 +168,7 @@ def create_acct():
             page = Page()
             page.title = 'Home'
             page.page_name = None
-            page.create_rev('Welcome to hypertextual. This is your home page.')
+            page.create_rev('Welcome to hypertextual. This is your home page.', True)
             page.acct = acct
 
             # persist
@@ -273,7 +273,7 @@ def page_view(page):
     if rev is None or rev < 0 or rev > page.curr_rev_num:
         rev = page.curr_rev_num
 
-    if page.use_markdown:
+    if rev.use_markdown:
         html = render_markdown_to_html(g.session, g.current_user, page, rev)
     else:
         html = render_text_to_html(g.session, g.current_user, page, rev)
@@ -305,7 +305,8 @@ def page_edit(page):
 
         # persist
         page_text = request.form['text']
-        page.create_rev(page_text)
+        use_markdown = request.form['use_markdown'] == 'True'
+        page.create_rev(page_text, use_markdown)
         g.session.commit()
 
         # redirect to view page
@@ -349,7 +350,8 @@ def page_create(acct, title):
 
         # persist
         page_text = request.form['text']
-        page.create_rev(page_text)
+        use_markdown = request.form['use_markdown'] == 'True'
+        page.create_rev(page_text, use_markdown)
         g.current_user.pages.append(page)
         g.session.commit()
 
