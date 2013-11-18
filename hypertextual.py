@@ -385,34 +385,48 @@ def dublin_rdf():
 def opensearch_xml():
     abort(404)
 
+def find_static_and_template_files():
+    extra_dirs = ['%s/static' % app_path, '%s/templates' % app_path]
+    extra_files = extra_dirs[:]
+    for extra_dir in extra_dirs:
+        for dirname, dirs, files in os.walk(extra_dir):
+            for filename in files:
+                if not filename.startswith('.'): # exclude vim swap files, etc.
+                    filename = os.path.join(dirname, filename)
+                    if os.path.isfile(filename):
+                        extra_files.append(filename)
+    return extra_files
+
 if __name__ == '__main__':
 
-    app_options = {'port': app.config['PORT'], 'host': '0.0.0.0', 'use_reloader': True}
+    # set up default app options
+    app_options = {
+        'port': app.config['PORT'],
+        'host': '0.0.0.0',
+        'debug': False,        # show tracebacks in pycharm
+        'use_debugger': False, # show tracebacks in browser
+        'use_reloader': False  # reload files on change
+    }
 
-    # set up some args to enable debugging in flask
+    # set up some args for enabling debug mode in pycharm
     import argparse
-    parser = argparse.ArgumentParser(description='Development Server Help')
-    parser.add_argument("-d", "--debug", action="store_true", dest="debug_mode",
-        help="run in debug mode (for use with PyCharm)", default=False)
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-d',
+        '--debug',
+        action='store_true',
+        dest='debug_mode',
+        default=False)
     cmd_args = parser.parse_args()
+
     if cmd_args.debug_mode:
-        app_options["debug"] = True
-        app_options["use_debugger"] = False
-        app_options["use_reloader"] = False
+        # set up debugging within pycharm
+        app_options['debug'] = True
     elif app.config['DEBUG']:
-        # extra_files are any files beyond .py files that should
-        # trigger a reload when changed (in debug mode, but not in flask)
-        extra_dirs = ['%s/static' % app_path, '%s/templates' % app_path]
-        extra_files = extra_dirs[:]
-        for extra_dir in extra_dirs:
-            for dirname, dirs, files in os.walk(extra_dir):
-                for filename in files:
-                    if not filename.startswith('.'): # exclude vim swap files, etc.
-                        filename = os.path.join(dirname, filename)
-                        if os.path.isfile(filename):
-                            extra_files.append(filename)
-        app_options["extra_files"] = extra_files
+        # set up debugging and reloader
+        app_options['use_debugger'] = True
+        app_options['use_reloader'] = True
+        app_options['extra_files'] = find_static_and_template_files()
 
     # run the app
     app.run(**app_options)
