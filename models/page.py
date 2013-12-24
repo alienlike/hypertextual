@@ -14,26 +14,23 @@ class Page(DeclarativeBase):
     acct_id = Column(Integer, ForeignKey('acct.id', ondelete='CASCADE'), nullable=False)
     create_ts = Column(DateTime, default=datetime.now)
 
-    page_name = Column(String, nullable=True)
-    title = Column(String, nullable=False)
-    orig_text = Column(String, nullable=False)
-    curr_text = Column(String, nullable=False)
-    curr_rev_num = Column(Integer, nullable=False)
+    page_name = Column(String) # http://hypertextual/<page_name>
+    title = Column(String)
+    curr_rev_num = Column(Integer)
+    curr_text = Column(String)
+    draft_rev_num = Column(Integer)
 
     # relationships
     revs = relationship('Revision', order_by='Revision.id', backref='page', primaryjoin='Page.id==Revision.page_id')
     acct = None #-> Account.pages
 
-    def __init__(self):
-        self.orig_text = ''
+    def __init__(self, session=None, acct=None, title=None):
         self.curr_text = ''
+        self.draft_text = ''
         self.curr_rev_num = None
-
-    def use_markdown(self):
-        if self.curr_rev_num is None:
-            return True
-        else:
-            return self.revs[self.curr_rev_num].use_markdown
+        self.draft_rev_num = None
+        if session is not None:
+            self.set_title(session, acct, title)
 
     def get_url(self, rev=None):
 
@@ -69,7 +66,7 @@ class Page(DeclarativeBase):
                 page_name += "-"
         page_name = page_name.strip('-')
 
-        # limit to 30 chars
+        # limit to 100 chars
         page_name = page_name[:100].strip('-')
 
         # prepend underscore to numeric name
@@ -91,52 +88,62 @@ class Page(DeclarativeBase):
         # set page name
         self.page_name = name_to_test
 
-    # Generate a new revision by diffing the new text against the current text.
-    def create_rev(self, new_text, use_markdown):
+    def get_curr_rev(self):
+        if self.curr_rev_num is not None:
+            return self.revs[self.curr_rev_num]
+        return None
 
-        # first rev
-        if self.curr_rev_num is None:
+    def get_draft_rev(self):
+        if self.draft_rev_num is not None:
+            return self.revs[self.draft_rev_num]
+        return None
+
+    # create or update draft revision
+    def create_draft_rev(self, draft_text, use_markdown):
+
+        if self.draft_rev_num is not None:
+            # use existing draft revision
+            rev = self.revs[self.draft_rev_num]
+        else:
+            # create new draft revision
             rev = Revision()
-            rev.rev_num = 0
-            rev.patch_text = None
-            rev.use_markdown = use_markdown
+            rev.rev_num = \
+                0 if self.curr_rev_num is None else self.curr_rev_num + 1
             self.revs.append(rev)
-            self.curr_rev_num = 0
-            self.orig_text = new_text
-            self.curr_text = new_text
+            self.draft_rev_num = rev.rev_num
+        rev.use_markdown = use_markdown
 
-        # subsequent rev
-        elif new_text != self.curr_text:
-            rev = Revision()
-            rev.rev_num = self.curr_rev_num + 1
-            rev.use_markdown = use_markdown
+        # get patch text
+        rev.patch_text = ''
+        if draft_text != self.curr_text:
             from diff_match_patch.diff_match_patch import diff_match_patch
             dmp = diff_match_patch()
-            patches = dmp.patch_make(self.curr_text, new_text)
+            patches = dmp.patch_make(self.curr_text, draft_text)
             rev.patch_text = dmp.patch_toText(patches)
-            self.revs.append(rev)
-            self.curr_rev_num = rev.rev_num
-            self.curr_text = new_text
 
-        # change to use_markdown only
-        else:
-            curr_rev = self.revs[self.curr_rev_num]
-            if curr_rev.use_markdown != use_markdown:
-                curr_rev.use_markdown = use_markdown
+        # keep the draft text intact, in case publish_draft_rev gets called
+        self.draft_text = draft_text
+
+    # promote the draft revision to current revision
+    def publish_draft_rev(self):
+        # draft_text may or may not exist
+        self.curr_text = self.draft_text \
+            or self.get_text_for_rev(self.draft_rev_num)
+        self.curr_rev_num = self.draft_rev_num
+        self.draft_rev_num = None
 
     # Get the text for a particular revision
     def get_text_for_rev(self, rev_num):
-        if rev_num == 0:
-            text = self.orig_text
-        elif rev_num == self.curr_rev_num:
+        if rev_num == self.curr_rev_num:
+            # current revision text is readily available
             text = self.curr_text
         else:
-            # apply successive patches until the text for the
-            # requested version has been reconstructed
+            # prior revision text requires us to apply successive
+            # patches until the text has been reconstructed
             from diff_match_patch.diff_match_patch import diff_match_patch
             dmp = diff_match_patch()
-            text = self.orig_text
-            for rev in self.revs[1:rev_num+1]:
+            text = ''
+            for rev in self.revs[0:rev_num+1]:
                 patches = dmp.patch_fromText(rev.patch_text)
                 text = dmp.patch_apply(patches, text)[0]
         return text

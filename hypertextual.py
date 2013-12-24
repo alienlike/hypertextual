@@ -25,7 +25,8 @@ engine = create_engine(conn_str)
 Session = sessionmaker()
 Session.configure(bind=engine)
 
-RESERVED_WORDS = ['site','account','admin','administrator','edit','create','api','rss','json','xml','html','css','js']
+RESERVED_WORDS = ['site','account','docs','doc','help','admin','administrator',
+                  'edit','create','api','rss','json','xml','html','css','js']
 UID_REGEX = r'^([a-zA-Z][a-zA-Z0-9]*)$'
 
 def init_db():
@@ -132,7 +133,7 @@ def create_acct():
 
         # check whether uid or email already exist
         uid_exists = g.session.query(Account).filter(Account.uid==uid).first() is not None
-        email_exists = g.session.query(Account).filter(Account.email==email).first() is not None
+        email_exists = email and g.session.query(Account).filter(Account.email==email).first() is not None
 
         if not uid:
             valid = False
@@ -158,25 +159,12 @@ def create_acct():
 
         if valid:
 
-            # create new user
-            acct = Account()
-            acct.uid = uid
-            acct.email = email
-            acct.set_password(pw)
-
-            # create home page for new user
-            page = Page()
-            page.title = 'Home'
-            page.page_name = None
-            page.create_rev('Welcome to hypertextual. This is your home page.', True)
-            page.acct = acct
-
-            # persist
-            g.session.add_all([acct, page])
+            # create account
+            acct = Account(uid, pw, email)
+            g.session.add(acct)
             g.session.commit()
 
             # add account to session
-            acct = g.session.query(Account).filter(Account.uid==uid).one()
             session['current_user'] = acct
             g.current_user = acct
 
@@ -198,235 +186,216 @@ def create_acct():
 @app.route('/<uid>/', methods=['POST', 'GET'])
 def user_home(uid):
 
-    # get account if exists
-    try:
-        acct = g.session.query(Account).filter(Account.uid==uid).one()
-    except NoResultFound:
-        abort(404)
-
-    # get any arguments
+    # get any url arguments
     action = request.args.get('action', '').strip()
-    title = request.args.get('title', '').strip()
 
-    if action == 'create' and title != '' and uid == g.current_user.uid:
+    if action == 'create':
+
+        # redirect to home page if unauthorized user
+        if not g.current_user or uid != g.current_user.uid:
+            url = url_for('user_home', uid=uid)
+            return redirect(url)
+
+        # get account by uid; abort if not found
+        try:
+            acct = g.session.query(Account).filter(Account.uid==uid).one()
+        except NoResultFound:
+            abort(404)
+
+        # redirect to the page if the title exists
+        title = request.args.get('title', '').strip()
         page = g.session.query(Page).\
             filter(Page.title==title).\
             filter(Page.acct==acct).first()
         if page:
-            # if a page by this title exists, redirect to the page
-            url = url_for('user_page', uid=uid, page_name=page.page_name)
+            url = url_for('user_page', uid=acct.uid, page_name=page.page_name)
             return redirect(url)
-        else:
-            return page_create(acct, title)
+
+        # determine which renderer or handler to call
+        if request.method == 'GET':
+            return render_page_create(acct, title)
+        elif request.method == 'POST':
+            return handle_page_create(acct, title)
+
     else:
-        # get home page if exists
-        try:
-            page = g.session.query(Page).\
-                filter(Page.page_name==None).\
-                filter(Page.acct==acct).one()
-        except NoResultFound:
-            abort(404)
-        if action == 'edit' and g.current_user and uid == g.current_user.uid:
-            return page_edit(page)
-        elif request.method == 'GET':
-            return page_view(page)
-        else:
-            url = url_for('user_home', uid=uid)
-            return redirect(url)
+        return user_page(uid, None)
 
 @app.route('/<uid>/<page_name>/', methods=['POST', 'GET'])
 def user_page(uid, page_name):
 
-    # get account if exists
+    # get account by uid; abort if not found
     try:
         acct = g.session.query(Account).filter(Account.uid==uid).one()
     except NoResultFound:
         abort(404)
 
-    # get page if exists
+    # get page by page_name; abort if not found
     try:
         page = g.session.query(Page).\
-        filter(Page.page_name==page_name).\
-        filter(Page.acct==acct).one()
+            filter(Page.page_name==page_name).\
+            filter(Page.acct==acct).one()
     except NoResultFound:
         abort(404)
 
-    action = request.args.get('action','').strip()
+    # get any url arguments
+    action = request.args.get('action', '').strip()
 
-    if action == 'edit' and g.current_user and uid == g.current_user.uid:
-        return page_edit(page)
-    elif request.method == 'GET':
-        return page_view(page)
-    else:
-        url = url_for('user_page', uid=uid, page_name=page_name)
+    # ignore any action by unauthorized user
+    if action and (not g.current_user or uid != g.current_user.uid):
+        url = url_for('user_home', uid=uid)
         return redirect(url)
 
-# view a user page
-def page_view(page):
-
-    # determine what rev num to use; abort if an invalid rev was provided
-    rev = request.args.get('rev','').strip()
-    try:
-        rev = int(rev)
-    except ValueError:
-        rev = None
-    if rev is None or rev < 0 or rev > page.curr_rev_num:
-        rev = page.curr_rev_num
-
-    if rev.use_markdown:
-        html = render_markdown_to_html(g.session, g.current_user, page, rev)
+    # determine which renderer or handler to call
+    if not action:
+        rev_num = request.args.get('rev', '').strip()
+        if rev_num == '':
+            rev_num = None
+        else:
+            try:
+                rev_num = int(rev_num)
+            except ValueError:
+                rev_num = -1
+        return render_page_view(page, rev_num)
+    elif action == 'edit':
+        if request.method == 'GET':
+            return render_page_edit(page)
+        elif request.method == 'POST':
+            return handle_page_edit(page)
     else:
-        html = render_text_to_html(g.session, g.current_user, page, rev)
+        pass
 
+def render_page_view(page, rev_num=None):
+
+    # determine the rev num; redirect if it doesn't exist
+    if rev_num is None:
+        rev_num = page.curr_rev_num
+    elif rev_num < 0 or rev_num > page.curr_rev_num:
+        url = url_for('user_page', uid=page.acct.uid, page_name=page.page_name)
+        return redirect(url)
+
+    # get the revision and render it as html for display
+    rev = page.revs[rev_num]
+    if rev.use_markdown:
+        page_html = render_markdown_to_html(g.session, g.current_user, page, rev_num)
+    else:
+        page_html = render_text_to_html(g.session, g.current_user, page, rev_num)
+
+    # return the rendered page template
     t = templates['page_view.html']
     return t.render(
         g=g,
         site_url=site_url,
         page=page,
-        rev=rev,
-        page_html=html
+        rev_num=rev_num,
+        page_html=page_html
     )
 
-# edit a page
-def page_edit(page):
-
-    if request.method == 'GET':
-
-        # render the edit page
-        t = templates['page_edit.html']
-        return t.render(
-            g=g,
-            site_url=site_url,
-            page=page,
-            acct=page.acct
-        )
-
-    elif request.method == 'POST':
-
-        # persist
-        page_text = request.form['text']
-        use_markdown = request.form['use_markdown'] == 'True'
-        page.create_rev(page_text, use_markdown)
-        g.session.commit()
-
-        # redirect to view page
-        if page.page_name is None:
-            url = url_for('user_home', uid=page.acct.uid)
-        else:
-            url = url_for('user_page', uid=page.acct.uid, page_name=page.page_name)
-        return redirect(url)
-
-# create a user page
-def page_create(acct, title):
-
-    # if a page by this name already exists, go to its edit page
-    page = g.session.query(Page).\
-        filter(Page.title==title).\
-        filter(Page.acct==acct).first()
-    if page is not None:
-        url = url_for(
-            'user_page_edit',
-            uid=acct.uid,
-            page_name=page.page_name
-        )
-        return redirect(url)
+def render_page_create(acct, title):
 
     # create a new page
-    page = Page()
-    page.set_title(g.session, acct, title)
+    page = Page(g.session, acct, title)
+    page.create_draft_rev('', True)
 
-    if request.method == 'GET':
+    # render the edit page
+    t = templates['page_edit.html']
+    return t.render(
+        g=g,
+        site_url=site_url,
+        page=page,
+        rev=page.get_draft_rev(),
+        acct=acct
+    )
 
-        # render the edit page
-        t = templates['page_edit.html']
-        return t.render(
-            g=g,
-            site_url=site_url,
-            page=page,
-            acct=acct
-        )
+def handle_page_create(acct, title):
 
-    elif request.method == 'POST':
+    publish = True
 
-        # persist
-        page_text = request.form['text']
-        use_markdown = request.form['use_markdown'] == 'True'
-        page.create_rev(page_text, use_markdown)
-        g.current_user.pages.append(page)
-        g.session.commit()
+    # get form values
+    page_text = request.form['text']
+    use_markdown = request.form['use_markdown'] == 'True'
 
-        # redirect to view page
-        url = url_for(
-            'user_page',
-            uid=acct.uid,
-            page_name=page.page_name
-        )
-        return redirect(url)
+    # create a new page
+    page = Page(g.session, acct, title)
+    page.create_draft_rev(page_text, use_markdown)
 
-# miscellaneous routes - move these to the top later
+    # persist
+    page.create_draft_rev(page_text, use_markdown)
+    if publish:
+        page.publish_draft_rev()
+    g.current_user.pages.append(page)
+    g.session.commit()
 
-@app.route('/robots.txt/')
-def robots_txt():
-    abort(404)
+    # redirect to view page
+    url = url_for('user_page', uid=acct.uid, page_name=page.page_name)
+    return redirect(url)
 
-@app.route('/favicon.ico/')
-def favicon_ico():
-    abort(404)
+def render_page_edit(page):
 
-@app.route('/sitemap.xml/')
-def sitemap_xml():
-    abort(404)
+    # render the edit page
+    rev = page.get_draft_rev() or page.get_curr_rev()
+    t = templates['page_edit.html']
+    return t.render(
+        g=g,
+        site_url=site_url,
+        rev=rev,
+        page=page,
+        acct=page.acct
+    )
 
-@app.route('/dublin.rdf/')
-def dublin_rdf():
-    abort(404)
+def handle_page_edit(page):
 
-@app.route('/opensearch.xml/')
-def opensearch_xml():
-    abort(404)
+    publish = True
 
-def find_static_and_template_files():
-    extra_dirs = ['%s/static' % app_path, '%s/templates' % app_path]
-    extra_files = extra_dirs[:]
-    for extra_dir in extra_dirs:
-        for dirname, dirs, files in os.walk(extra_dir):
-            for filename in files:
-                if not filename.startswith('.'): # exclude vim swap files, etc.
-                    filename = os.path.join(dirname, filename)
-                    if os.path.isfile(filename):
-                        extra_files.append(filename)
-    return extra_files
+    # get form values
+    text = request.form['text']
+    use_markdown = request.form['use_markdown'] == 'True'
 
-if __name__ == '__main__':
+    # persist
+    page.create_draft_rev(text, use_markdown)
+    if publish:
+        page.publish_draft_rev()
+    g.session.commit()
 
-    # set up default app options
+    # redirect to view page
+    if page.page_name is None:
+        url = url_for('user_home', uid=page.acct.uid)
+    else:
+        url = url_for('user_page', uid=page.acct.uid, page_name=page.page_name)
+    return redirect(url)
+
+def main():
+
+    # set up some args for enabling debug or reload mode
+    import argparse
+    p = argparse.ArgumentParser()
+    p.add_argument('-d', action='store_true', dest='debug_mode', default=False)
+    p.add_argument('-r', action='store_true', dest='reload_mode', default=False)
+    cmd_args = p.parse_args()
+
+    # set up app options
     app_options = {
         'port': app.config['PORT'],
         'host': '0.0.0.0',
-        'debug': False,        # show tracebacks in pycharm
-        'use_debugger': False, # show tracebacks in browser
-        'use_reloader': False  # reload files on change
+        'debug': cmd_args.debug_mode, # show tracebacks in pycharm
+        'use_debugger': cmd_args.debug_mode or cmd_args.reload_mode, # show tracebacks in browser
+        'use_reloader': cmd_args.reload_mode # reload files on change
     }
 
-    # set up some args for enabling debug mode in pycharm
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-d',
-        '--debug',
-        action='store_true',
-        dest='debug_mode',
-        default=False)
-    cmd_args = parser.parse_args()
-
-    if cmd_args.debug_mode:
-        # set up debugging within pycharm
-        app_options['debug'] = True
-    elif app.config['DEBUG']:
-        # set up debugging and reloader
-        app_options['use_debugger'] = True
-        app_options['use_reloader'] = True
-        app_options['extra_files'] = find_static_and_template_files()
+    if cmd_args.reload_mode:
+        # add static and template files to reloader
+        extra_dirs = ['%s/static' % app_path, '%s/templates' % app_path]
+        extra_files = extra_dirs[:]
+        for extra_dir in extra_dirs:
+            for dirname, dirs, files in os.walk(extra_dir):
+                for filename in files:
+                    if not filename.startswith('.'): # exclude vim swap files, etc.
+                        filename = os.path.join(dirname, filename)
+                        if os.path.isfile(filename):
+                            extra_files.append(filename)
+        app_options['extra_files'] = extra_files
 
     # run the app
     app.run(**app_options)
+
+if __name__ == '__main__':
+    main()

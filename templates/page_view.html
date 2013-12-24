@@ -8,11 +8,11 @@
     <tal:block metal:fill-slot="content">
         <div>
             <span class="page-title" tal:content="page.title">title</span>
-            <tal:block condition="page.curr_rev_num==rev and g.current_user and g.current_user.uid==page.acct.uid">
+            <tal:block condition="page.curr_rev_num==rev_num and g.current_user and g.current_user.uid==page.acct.uid">
                 <!-- edit link -->
                 - <a tal:attributes="href '%s?action=edit' % page.get_url()">Edit</a>
             </tal:block>
-            <tal:block condition="page.curr_rev_num!=rev">
+            <tal:block condition="page.curr_rev_num!=rev_num">
                 <!-- link to latest revision -->
                 - <a tal:attributes="href page.get_url()">Go to latest revision</a>
             </tal:block>
@@ -22,7 +22,7 @@
         </div>
         <hr class="margin-above" />
         <div class="page-footer">
-            Revision: <tal:block content="rev"></tal:block>
+            Revision: <tal:block content="rev_num"></tal:block>
         </div>
     </tal:block>
 </metal:main>

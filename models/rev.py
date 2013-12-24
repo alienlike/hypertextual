@@ -18,3 +18,6 @@ class Revision(DeclarativeBase):
 
     # relationships
     page = None #-> Page.revs
+
+    def get_text(self):
+        return self.page.get_text_for_rev(self.rev_num)

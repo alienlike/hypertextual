@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 from .base import DeclarativeBase
+from .page import Page
 
 class Account(DeclarativeBase):
 
@@ -15,10 +16,28 @@ class Account(DeclarativeBase):
 
     uid = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True)
-    pw_hash = Column(String) # Column(String, nullable=False)
+    pw_hash = Column(String, nullable=False)
 
     # relationship
     pages = relationship('Page', order_by='Page.id', backref='acct')
+
+    def __init__(self, uid, pw, email=None):
+
+        # create new user
+        self.uid = uid
+        if not email:
+            email = None
+        self.email = email
+        self.set_password(pw)
+
+        # create home page for new user
+        page = Page()
+        page.title = 'Home'
+        page.page_name = None
+        page.create_draft_rev(
+            'Welcome to hypertextual. This is your home page.', True)
+        page.publish_draft_rev()
+        page.acct = self
 
     def set_password(self, password):
         from config import BCRYPT_COMPLEXITY

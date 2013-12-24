@@ -28,21 +28,16 @@ class TestBasic(AlchemyTestBase):
 
     def test_create_acct(self):
 
-        a = Account()
-        a.uid = 'samiam'
-        a.set_password('secret')
+        uid = 'samiam'
+        pw = 'secret'
+        a = Account(uid, pw)
 
         p = Page()
         p.acct = a
         p.page_name = '_home'
         p.title = 'Home'
-        p.orig_text = 'my home page yo'
-        p.curr_text = p.orig_text
-        p.curr_rev_num = 0
-
-        r = Revision()
-        r.rev_num = 0
-        r.page = p
+        p.create_draft_rev('my home page yo', True)
+        r = p.get_draft_rev()
 
         self.assertEqual(a.id, None)
         self.assertEqual(p.id, None)
@@ -65,9 +60,7 @@ class TestBasic(AlchemyTestBase):
 
         p = Page()
         p.set_title(DBSession, a, '!@#% Home')
-        p.orig_text = 'my !@#% home page yo'
-        p.curr_text = p.orig_text
-        p.curr_rev_num = 0
+        p.create_draft_rev('my !@#% home page yo', True)
         p.acct = a
 
         DBSession.add(p)
@@ -75,9 +68,7 @@ class TestBasic(AlchemyTestBase):
 
         p2 = Page()
         p2.set_title(DBSession, a, 'Home')
-        p2.orig_text = 'my home page yo'
-        p2.curr_text = p2.orig_text
-        p2.curr_rev_num = 0
+        p2.create_draft_rev('my home page yo', True)
         p2.acct = a
 
         self.assertEqual(p.page_name, "home")
