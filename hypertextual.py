@@ -5,7 +5,7 @@ from chameleon import PageTemplateLoader
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-from models import Page, Account
+from models import Page, Account, Revision
 from render import render_text_to_html, render_markdown_to_html
 from validate_email import validate_email
 
@@ -266,19 +266,28 @@ def user_page(uid, page_name):
 
 def render_page_view(page, rev_num=None):
 
+    # don't allow non-owner to view a draft-only page
+    if page.curr_rev_num is None and (not g.current_user or g.current_user.uid != page.acct.uid):
+        abort(404)
+
     # determine the rev num; redirect if it doesn't exist
     if rev_num is None:
         rev_num = page.curr_rev_num
     elif rev_num < 0 or rev_num > page.curr_rev_num:
-        url = url_for('user_page', uid=page.acct.uid, page_name=page.page_name)
+        if page.page_name is None:
+            url = url_for('user_home', uid=page.acct.uid)
+        else:
+            url = url_for('user_page', uid=page.acct.uid, page_name=page.page_name)
         return redirect(url)
 
     # get the revision and render it as html for display
-    rev = page.revs[rev_num]
-    if rev.use_markdown:
-        page_html = render_markdown_to_html(g.session, g.current_user, page, rev_num)
-    else:
-        page_html = render_text_to_html(g.session, g.current_user, page, rev_num)
+    page_html = ''
+    if rev_num is not None:
+        rev = page.revs[rev_num]
+        if rev.use_markdown:
+            page_html = render_markdown_to_html(g.session, g.current_user, page, rev_num)
+        else:
+            page_html = render_text_to_html(g.session, g.current_user, page, rev_num)
 
     # return the rendered page template
     t = templates['page_view.html']
@@ -308,26 +317,37 @@ def render_page_create(acct, title):
 
 def handle_page_create(acct, title):
 
-    publish = True
-
     # get form values
     page_text = request.form['text']
     use_markdown = request.form['use_markdown'] == 'True'
 
-    # create a new page
-    page = Page(g.session, acct, title)
-    page.create_draft_rev(page_text, use_markdown)
+    # get button clicks
+    publish = request.form.has_key('publish')
+    save_draft = request.form.has_key('save_draft')
+    cancel = request.form.has_key('cancel')
 
-    # persist
-    page.create_draft_rev(page_text, use_markdown)
-    if publish:
-        page.publish_draft_rev()
-    g.current_user.pages.append(page)
-    g.session.commit()
+    if cancel:
 
-    # redirect to view page
-    url = url_for('user_page', uid=acct.uid, page_name=page.page_name)
-    return redirect(url)
+        # TODO: redirect to requesting page
+        url = url_for('user_home', uid=acct.uid)
+        return redirect(url)
+
+    elif save_draft or publish:
+
+        # create a new page
+        page = Page(g.session, acct, title)
+        page.create_draft_rev(page_text, use_markdown)
+
+        # persist
+        page.create_draft_rev(page_text, use_markdown)
+        if publish:
+            page.publish_draft_rev()
+        g.current_user.pages.append(page)
+        g.session.commit()
+
+        # redirect to view page
+        url = url_for('user_page', uid=acct.uid, page_name=page.page_name)
+        return redirect(url)
 
 def render_page_edit(page):
 
@@ -344,24 +364,43 @@ def render_page_edit(page):
 
 def handle_page_edit(page):
 
-    publish = True
-
     # get form values
     text = request.form['text']
     use_markdown = request.form['use_markdown'] == 'True'
 
-    # persist
-    page.create_draft_rev(text, use_markdown)
-    if publish:
-        page.publish_draft_rev()
-    g.session.commit()
+    # get button clicks
+    publish = request.form.has_key('publish')
+    save_draft = request.form.has_key('save_draft')
+    revert = request.form.has_key('revert')
+    cancel = request.form.has_key('cancel')
 
-    # redirect to view page
-    if page.page_name is None:
-        url = url_for('user_home', uid=page.acct.uid)
-    else:
-        url = url_for('user_page', uid=page.acct.uid, page_name=page.page_name)
-    return redirect(url)
+    if revert or cancel:
+        if revert:
+            g.session.query(Revision).\
+                filter(Revision.rev_num==page.draft_rev_num).\
+                filter(Revision.page==page).delete()
+            page.draft_rev_num = None
+            g.session.commit()
+        if page.page_name is None:
+            url = url_for('user_home', uid=page.acct.uid)
+        else:
+            url = url_for('user_page', uid=page.acct.uid, page_name=page.page_name)
+        return redirect(url)
+
+    elif save_draft or publish:
+
+        # persist
+        page.create_draft_rev(text, use_markdown)
+        if publish:
+            page.publish_draft_rev()
+        g.session.commit()
+
+        # redirect to view page
+        if page.page_name is None:
+            url = url_for('user_home', uid=page.acct.uid)
+        else:
+            url = url_for('user_page', uid=page.acct.uid, page_name=page.page_name)
+        return redirect(url)
 
 def main():
 

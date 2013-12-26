@@ -22,7 +22,7 @@
         </div>
         <hr class="margin-above" />
         <div class="page-footer">
-            Revision: <tal:block content="rev_num"></tal:block>
+            Revision: <tal:block content="rev_num if rev_num is not None else 'Draft only'"></tal:block>
         </div>
     </tal:block>
 </metal:main>

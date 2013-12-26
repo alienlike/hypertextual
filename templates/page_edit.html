@@ -8,15 +8,20 @@
     <tal:block metal:fill-slot="content">
         <form method="post" id="pageEditForm">
             <span class="page-title" tal:content="page.title">title</span>
-            <div id="pageEditArea">
-                <textarea rows="20" id="text" name="text" tal:content="rev.get_text()"></textarea>
-            </div>
-            <div>
-                <input type="radio" id="markdown" name="use_markdown" value="True" tal:attributes="checked rev.use_markdown"><label for="markdown">Markdown</label>
-                <input type="radio" id="plaintext" name="use_markdown" value="False" tal:attributes="checked not rev.use_markdown"><label for="plaintext">Plain text</label>
-            </div>
             <div style="margin-top: 10px;">
-                <button type="submit">Save</button>
+                <span>
+                    <button type="submit" name="save_draft">Save Draft</button>
+                    <button type="submit" name="publish">Publish</button>
+                    <button type="submit" name="revert" tal:condition="page.draft_rev_num is not None">Revert</button>
+                    <button type="submit" name="cancel">Cancel</button>
+                </span>
+                <span style="float: right;">
+                    <input type="radio" id="markdown" name="use_markdown" value="True" tal:attributes="checked rev.use_markdown"><label for="markdown">Markdown</label>
+                    <input type="radio" id="plaintext" name="use_markdown" value="False" tal:attributes="checked not rev.use_markdown"><label for="plaintext">Plain text</label>
+                </span>
+            </div>
+            <div id="pageEditArea">
+                <textarea id="text" name="text" tal:content="rev.get_text()"></textarea>
             </div>
         </form>
     </tal:block>
