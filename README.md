@@ -4,32 +4,37 @@
 
 *must haves*
 
-- plaintext / markdown option
 - database-driven page links
-- save draft / publish workflow
-- revision index
-- responsive layout
+- private pages
+- rename/redirect a page
+- link styles: redirected/does not exist/private page linked on public page
 
 *features*
 
+- edit page names and titles
 - delete a page
 - header/footer/menu
 - monospace font in editor
 - preview pane
-- larger edit box
-- edit page names and titles
-- always keep header/footer visible
+- revision index
 - orphaned page index
+
+*styling*
+
+- larger edit box
+- always keep header/footer visible
+- responsive layout
 
 *public site*
 
 - home/about/faq/tutorial
 - sample content
+- password change/reset
 
 *nice to have*
 
+- ajax-based editing
 - color options
 - unicode compatibility
 - search
 - collaborative editing
-- private pages
