@@ -29,10 +29,10 @@ def render_a_tag(session, current_uid, page_uid, match):
 
     return html
 
-def render_text_to_html(session, current_user, page, rev):
+def render_text_to_html(session, current_user, page, rev_num):
 
     # get the text for the specified revision
-    text = page.get_text_for_rev(rev)
+    text = page.get_text_for_rev(rev_num)
 
     # get the current user's uid, if available
     current_uid = None
@@ -44,10 +44,10 @@ def render_text_to_html(session, current_user, page, rev):
     html = '<pre>%s</pre>' % html
     return html
 
-def render_markdown_to_html(session, current_user, page, rev):
+def render_markdown_to_html(session, current_user, page, rev_num):
 
     # get the text for the specified revision
-    text = page.get_text_for_rev(rev)
+    text = page.get_text_for_rev(rev_num)
 
     # get the current user's uid, if available
     current_uid = None

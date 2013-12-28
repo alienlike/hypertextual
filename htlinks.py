@@ -43,6 +43,7 @@ def build_url(session, current_uid, page_uid, link_uid, title):
     return url, exists
 
 class HypertextualLinkExtension(Extension):
+
     def __init__(self, configs):
         # set extension defaults
         self.config = {
@@ -52,7 +53,7 @@ class HypertextualLinkExtension(Extension):
             }
 
         # Override defaults with user settings
-        for key, value in configs :
+        for key, value in configs:
             self.setConfig(key, value)
 
     def extendMarkdown(self, md, md_globals):
@@ -64,6 +65,7 @@ class HypertextualLinkExtension(Extension):
         md.inlinePatterns.add('hypertextuallink', hypertextualLinkPattern, "<not_strong")
 
 class HypertextualLinks(Pattern):
+
     def __init__(self, pattern, config):
         super(HypertextualLinks, self).__init__(pattern)
         self.config = config
