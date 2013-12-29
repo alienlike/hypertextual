@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import DeclarativeBase
 from .rev import Revision
@@ -19,6 +19,7 @@ class Page(DeclarativeBase):
     curr_rev_num = Column(Integer)
     curr_text = Column(String)
     draft_rev_num = Column(Integer)
+    private = Column(Boolean)
 
     # relationships
     revs = relationship('Revision', order_by='Revision.id', backref='page', primaryjoin='Page.id==Revision.page_id')
@@ -29,22 +30,37 @@ class Page(DeclarativeBase):
         self.draft_text = ''
         self.curr_rev_num = None
         self.draft_rev_num = None
-        if session is not None:
+        self.private = False
+        if session or acct or title:
             self.set_title(session, acct, title)
 
-    def get_url(self, rev=None):
+    def user_is_owner(self, acct_or_uid):
+        try:
+            uid = acct_or_uid.uid
+        except AttributeError:
+            uid = acct_or_uid
+        return self.acct.uid == uid
+
+    def user_can_view(self, acct_or_uid):
+        if self.private or self.curr_rev_num is None:
+            allow = self.user_is_owner(acct_or_uid)
+        else:
+            allow = True
+        return allow
+
+    def get_url(self, rev_num=None):
 
         # start with uid
         from config import SITE_URL
         url = '%s/%s' % (SITE_URL, self.acct.uid)
 
-        # add rev num if required
-        if rev is not None and rev != self.curr_rev_num:
-            url += '/%s' % rev
-
         # add page name if required
         if self.page_name is not None:
             url += '/%s' % self.page_name
+
+        # add rev num if required
+        if rev_num is not None and rev_num != self.curr_rev_num:
+            url += '?rev=%s' % rev_num
 
         return url
 

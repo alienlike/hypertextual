@@ -237,12 +237,19 @@ def user_page(uid, page_name):
     except NoResultFound:
         abort(404)
 
+    # check user access
+    if not page.user_can_view(g.current_user):
+        abort(404)
+
     # get any url arguments
     action = request.args.get('action', '').strip()
 
     # ignore any action by unauthorized user
-    if action and (not g.current_user or uid != g.current_user.uid):
-        url = url_for('user_home', uid=uid)
+    if action and not page.user_is_owner(g.current_user):
+        if page_name is None:
+            url = url_for('user_home', uid=uid)
+        else:
+            url = url_for('user_page', uid=uid, page_name=page_name)
         return redirect(url)
 
     # determine which renderer or handler to call
@@ -265,10 +272,6 @@ def user_page(uid, page_name):
         pass
 
 def render_page_view(page, rev_num=None):
-
-    # don't allow non-owner to view a draft-only page
-    if page.curr_rev_num is None and (not g.current_user or g.current_user.uid != page.acct.uid):
-        abort(404)
 
     # determine the rev num; redirect if it doesn't exist
     if rev_num is None:
@@ -320,6 +323,7 @@ def handle_page_create(acct, title):
     # get form values
     page_text = request.form['text']
     use_markdown = request.form['use_markdown'] == 'True'
+    private = request.form.has_key('private')
 
     # get button clicks
     publish = request.form.has_key('publish')
@@ -336,6 +340,7 @@ def handle_page_create(acct, title):
 
         # create a new page
         page = Page(g.session, acct, title)
+        page.private = private
         page.create_draft_rev(page_text, use_markdown)
 
         # persist
@@ -367,6 +372,7 @@ def handle_page_edit(page):
     # get form values
     text = request.form['text']
     use_markdown = request.form['use_markdown'] == 'True'
+    private = request.form.has_key('private') or page.page_name == '_private'
 
     # get button clicks
     publish = request.form.has_key('publish')
@@ -390,6 +396,7 @@ def handle_page_edit(page):
     elif save_draft or publish:
 
         # persist
+        page.private = private
         page.create_draft_rev(text, use_markdown)
         if publish:
             page.publish_draft_rev()

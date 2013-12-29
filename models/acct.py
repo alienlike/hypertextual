@@ -31,13 +31,23 @@ class Account(DeclarativeBase):
         self.set_password(pw)
 
         # create home page for new user
-        page = Page()
-        page.title = 'Home'
-        page.page_name = None
-        page.create_draft_rev(
+        page1 = Page()
+        page1.title = 'Home'
+        page1.page_name = None
+        page1.create_draft_rev(
             'Welcome to hypertextual. This is your home page.', True)
-        page.publish_draft_rev()
-        page.acct = self
+        page1.publish_draft_rev()
+        page1.acct = self
+
+        # create private home page for new user
+        page2 = Page()
+        page2.title = 'Private Home'
+        page2.page_name = '_private'
+        page2.private = True
+        page2.create_draft_rev(
+            'Welcome to hypertextual. This is your private home page.', True)
+        page2.publish_draft_rev()
+        page2.acct = self
 
     def set_password(self, password):
         from config import BCRYPT_COMPLEXITY

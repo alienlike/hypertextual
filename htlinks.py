@@ -28,11 +28,11 @@ def build_url(session, current_uid, page_uid, link_uid, title):
         page = session.query(Page).\
             join(Account.pages).\
             filter(Page.title==title, Account.uid==link_uid).one()
-        if page.curr_rev_num is None and page_uid != current_uid:
-            # don't allow non-owner to access a draft-only page
-            url = '#'
-        else:
+        if page.user_can_view(current_uid):
             url = page.get_url()
+        else:
+            exists = False
+            url = '#'
     except NoResultFound:
         exists = False
         if page_uid == current_uid:
