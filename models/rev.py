@@ -1,5 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy.orm import relationship
 from .base import DeclarativeBase
 
 class Revision(DeclarativeBase):
@@ -18,6 +19,7 @@ class Revision(DeclarativeBase):
 
     # relationships
     page = None #-> Page.revs
+    links = relationship('Link', order_by='Link.link_num', backref='rev')
 
     def get_text(self):
         return self.page.get_text_for_rev(self.rev_num)
