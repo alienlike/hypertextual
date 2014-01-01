@@ -26,6 +26,7 @@ class Page(DeclarativeBase):
     acct = None #-> Account.pages
 
     def __init__(self, session=None, acct=None, title=None):
+        # todo: replace with column defaults?
         self.curr_text = ''
         self.draft_text = ''
         self.curr_rev_num = None
