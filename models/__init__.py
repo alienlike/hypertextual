@@ -1,4 +1,4 @@
-from .session import DBSession
+from .session import db_session
 from .base import DeclarativeBase
 from .acct import Account
 from .page import Page

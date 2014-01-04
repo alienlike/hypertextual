@@ -1,6 +1,5 @@
-import os, re
-from flask import \
-    Flask, request, session, g, redirect, url_for, abort, flash
+import os, re, argparse
+from flask import Flask, request, session, g, redirect, url_for, abort
 from chameleon import PageTemplateLoader
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -9,68 +8,116 @@ from models import Page, Account, Revision
 from render import render_text_to_html, render_markdown_to_html
 from validate_email import validate_email
 
-# set up app
 app = Flask(__name__)
-app.config.from_object('config')
+DBSession = None
+site_url = None
+app_path = None
+templates = None
 
-# set up templating
-app_path = os.path.dirname(os.path.abspath(__file__))
-template_path = os.path.join(app_path, 'templates')
-templates = PageTemplateLoader(template_path)
-site_url = app.config['SITE_URL']
+def main():
+    configure_flask_app()
+    set_globals()
+    command_line_args = get_command_line_args()
+    app_options = get_app_options(command_line_args)
+    app.run(**app_options)
 
-# set up alchemy
-conn_str = app.config['CONN_STR']
-engine = create_engine(conn_str)
-Session = sessionmaker()
-Session.configure(bind=engine)
+def configure_flask_app():
+    app.config.from_object('config')
 
-RESERVED_WORDS = ['site','account','docs','doc','help','admin','administrator',
-                  'edit','create','api','rss','json','xml','html','css','js']
-UID_REGEX = r'^([a-zA-Z][a-zA-Z0-9]*)$'
+def set_globals():
+    global DBSession, site_url, app_path, templates
+    DBSession = create_alchemy_session_factory()
+    site_url = get_site_url()
+    app_path = get_app_path()
+    templates = get_chameleon_templates()
 
-def init_db():
-    from models.base import DeclarativeBase
-    DeclarativeBase.metadata.bind = engine
-    DeclarativeBase.metadata.drop_all()
-    DeclarativeBase.metadata.create_all(engine)
-    return 'success'
+def create_alchemy_session_factory():
+    conn_str = app.config['CONN_STR']
+    engine = create_engine(conn_str)
+    session_factory = sessionmaker()
+    session_factory.configure(bind=engine)
+    return session_factory
+
+def get_site_url():
+    site_url = app.config['SITE_URL']
+    return site_url
+
+def get_app_path():
+    app_path = os.path.dirname(os.path.abspath(__file__))
+    return app_path
+
+def get_chameleon_templates():
+    template_path = os.path.join(app_path, 'templates')
+    template_loader = PageTemplateLoader(template_path)
+    return template_loader
+
+def get_command_line_args():
+    # set up some args for enabling debug or reload mode
+    p = argparse.ArgumentParser()
+    p.add_argument('-d', action='store_true', dest='debug_mode', default=False)
+    p.add_argument('-r', action='store_true', dest='reload_mode', default=False)
+    command_line_args = p.parse_args()
+    return command_line_args
+
+def get_app_options(command_line_args):
+    app_options = {
+        'port': app.config['PORT'],
+        'host': '0.0.0.0',
+        'debug': command_line_args.debug_mode, # show tracebacks in pycharm
+        'use_debugger': command_line_args.debug_mode or command_line_args.reload_mode, # show tracebacks in browser
+        'use_reloader': command_line_args.reload_mode # reload files on change
+    }
+    if command_line_args.reload_mode:
+        app_options['extra_files'] = get_static_files_for_reload_mode()
+    return app_options
+
+def get_static_files_for_reload_mode():
+    static_dirs = ['%s/static' % app_path, '%s/templates' % app_path]
+    static_files = static_dirs[:]
+    for static_dir in static_dirs:
+        for dir_name, dirs, file_names in os.walk(static_dir):
+            for file_name in file_names:
+                if not file_name.startswith('.'): # exclude vim swap files, etc.
+                    file_name = os.path.join(dir_name, file_name)
+                    if os.path.isfile(file_name):
+                        static_files.append(file_name)
 
 @app.before_request
 def before_request():
-    # create a db session for this request
-    g.session = Session()
-    # get current_user from session;
+    g.db_session = DBSession() # create a new db session for each request
+    g.current_user = get_current_user_from_session() # current_user is kept in session between requests
+
+def get_current_user_from_session():
     current_user = session.get('current_user', None)
-    if current_user is not None:
-        # merge with db session to avoid DetachedInstanceError later on
-        g.current_user = g.session.merge(current_user)
-    else:
-        g.current_user = None
+    if current_user:
+        # current_user will have been detached from its db session in a prior request;
+        # merge it with the current db session to avoid a DetachedInstanceError
+        current_user = g.db_session.merge(current_user)
+    return current_user
 
 @app.teardown_request
 def teardown_request(exception):
-    g.session.close()
+    g.db_session.close()
 
 @app.errorhandler(404)
 def page_not_found(e):
-    t = templates['404.html']
-    return t.render(
-        g=g,
-        site_url=site_url
-    ), 404
+    vals = {
+        'g': g,
+        'site_url': site_url
+    }
+    return render_template('404.html', **vals), 404
 
 @app.route('/')
 def site_home():
     # get users
-    accts = g.session.query(Account).order_by(Account.uid).all()
+    accts = g.db_session.query(Account).order_by(Account.uid).all()
     # show index page
-    t = templates['index.html']
-    return t.render(
-        g=g,
-        site_url=site_url,
-        accts=accts
-    )
+    vals = {
+        'g': g,
+        'site_url': site_url,
+        'accts': accts
+    }
+    return render_template('index.html', **vals)
 
 @app.route('/site/login/', methods=['POST', 'GET'])
 def login():
@@ -83,7 +130,7 @@ def login():
     if request.method == 'POST':
         # check that uid exists
         uid = request.form['uid'].strip().lower()
-        acct = g.session.query(Account).filter(Account.uid==uid).first()
+        acct = g.db_session.query(Account).filter(Account.uid==uid).first()
         if acct is not None:
             # validate password
             pw = request.form['pw']
@@ -97,13 +144,13 @@ def login():
                 return redirect(url)
 
     # show the login form
-    t = templates['login.html']
-    return t.render(
-        g=g,
-        site_url=site_url,
-        uid=uid,
-        pw=pw
-    )
+    vals = {
+        'g': g,
+        'site_url': site_url,
+        'uid': uid,
+        'pw': pw
+    }
+    return render_template('login.html', **vals)
 
 @app.route('/site/logout/')
 def logout():
@@ -132,16 +179,20 @@ def create_acct():
         valid = True
 
         # check whether uid or email already exist
-        uid_exists = g.session.query(Account).filter(Account.uid==uid).first() is not None
-        email_exists = email and g.session.query(Account).filter(Account.email==email).first() is not None
+        uid_exists = g.db_session.query(Account).filter(Account.uid==uid).first() is not None
+        email_exists = email and g.db_session.query(Account).filter(Account.email==email).first() is not None
+
+        reserved_names = ['site','account','docs','doc','help','admin','administrator',
+                          'edit','create','api','rss','json','xml','html','css','js']
+        uid_re = r'^([a-zA-Z][a-zA-Z0-9]*)$'
 
         if not uid:
             valid = False
             errors['uid'] = 'Please provide a username.'
-        elif not re.match(UID_REGEX, uid):
+        elif not re.match(uid_re, uid):
             valid = False
             errors['uid'] = 'Username must not begin with a numeral or contain special characters.'
-        elif uid in RESERVED_WORDS or uid_exists:
+        elif uid in reserved_names or uid_exists:
             valid = False
             errors['uid'] = 'Username is not available. Please try another.'
         if email_exists:
@@ -161,8 +212,8 @@ def create_acct():
 
             # create account
             acct = Account(uid, pw, email)
-            g.session.add(acct)
-            g.session.commit()
+            g.db_session.add(acct)
+            g.db_session.commit()
 
             # add account to session
             session['current_user'] = acct
@@ -172,16 +223,16 @@ def create_acct():
             url = url_for('user_home', uid=uid)
             return redirect(url)
 
-    t = templates['create_acct.html']
-    return t.render(
-        g=g,
-        site_url=site_url,
-        uid=uid,
-        email=email,
-        pw=pw,
-        pconfirm=pconfirm,
-        errors=errors
-    )
+    vals = {
+        'g': g,
+        'site_url': site_url,
+        'uid': uid,
+        'email': email,
+        'pw': pw,
+        'pconfirm': pconfirm,
+        'errors': errors
+    }
+    return render_template('create_acct.html', **vals)
 
 @app.route('/<uid>/', methods=['POST', 'GET'])
 def user_home(uid):
@@ -198,13 +249,13 @@ def user_home(uid):
 
         # get account by uid; abort if not found
         try:
-            acct = g.session.query(Account).filter(Account.uid==uid).one()
+            acct = g.db_session.query(Account).filter(Account.uid==uid).one()
         except NoResultFound:
             abort(404)
 
         # redirect to the page if the title exists
         title = request.args.get('title', '').strip()
-        page = g.session.query(Page).\
+        page = g.db_session.query(Page).\
             filter(Page.title==title).\
             filter(Page.acct==acct).first()
         if page:
@@ -225,13 +276,13 @@ def user_page(uid, page_name):
 
     # get account by uid; abort if not found
     try:
-        acct = g.session.query(Account).filter(Account.uid==uid).one()
+        acct = g.db_session.query(Account).filter(Account.uid==uid).one()
     except NoResultFound:
         abort(404)
 
     # get page by page_name; abort if not found
     try:
-        page = g.session.query(Page).\
+        page = g.db_session.query(Page).\
             filter(Page.page_name==page_name).\
             filter(Page.acct==acct).one()
     except NoResultFound:
@@ -288,35 +339,35 @@ def render_page_view(page, rev_num=None):
     if rev_num is not None:
         rev = page.revs[rev_num]
         if rev.use_markdown:
-            page_html = render_markdown_to_html(g.session, g.current_user, page, rev_num)
+            page_html = render_markdown_to_html(g.db_session, g.current_user, page, rev_num)
         else:
-            page_html = render_text_to_html(g.session, g.current_user, page, rev_num)
+            page_html = render_text_to_html(g.db_session, g.current_user, page, rev_num)
 
     # return the rendered page template
-    t = templates['page_view.html']
-    return t.render(
-        g=g,
-        site_url=site_url,
-        page=page,
-        rev_num=rev_num,
-        page_html=page_html
-    )
+    vals = {
+        'g': g,
+        'site_url': site_url,
+        'page': page,
+        'rev_num': rev_num,
+        'page_html': page_html
+    }
+    return render_template('page_view.html', **vals)
 
 def render_page_create(acct, title):
 
     # create a new page
-    page = Page(g.session, acct, title)
+    page = Page(g.db_session, acct, title)
     page.create_draft_rev('', True)
 
     # render the edit page
-    t = templates['page_edit.html']
-    return t.render(
-        g=g,
-        site_url=site_url,
-        page=page,
-        rev=page.get_draft_rev(),
-        acct=acct
-    )
+    vals = {
+        'g': g,
+        'site_url': site_url,
+        'page': page,
+        'rev': page.get_draft_rev(),
+        'acct': acct
+    }
+    return render_template('page_edit.html', **vals)
 
 def handle_page_create(acct, title):
 
@@ -339,16 +390,15 @@ def handle_page_create(acct, title):
     elif save_draft or publish:
 
         # create a new page
-        page = Page(g.session, acct, title)
+        page = Page(g.db_session, acct, title)
         page.private = private
         page.create_draft_rev(page_text, use_markdown)
 
         # persist
-        page.create_draft_rev(page_text, use_markdown)
         if publish:
             page.publish_draft_rev()
         g.current_user.pages.append(page)
-        g.session.commit()
+        g.db_session.commit()
 
         # redirect to view page
         url = url_for('user_page', uid=acct.uid, page_name=page.page_name)
@@ -358,14 +408,14 @@ def render_page_edit(page):
 
     # render the edit page
     rev = page.get_draft_rev() or page.get_curr_rev()
-    t = templates['page_edit.html']
-    return t.render(
-        g=g,
-        site_url=site_url,
-        rev=rev,
-        page=page,
-        acct=page.acct
-    )
+    vals = {
+        'g': g,
+        'site_url': site_url,
+        'page': page,
+        'rev': rev,
+        'acct': page.acct
+    }
+    return render_template('page_edit.html', **vals)
 
 def handle_page_edit(page):
 
@@ -382,11 +432,11 @@ def handle_page_edit(page):
 
     if revert or cancel:
         if revert:
-            g.session.query(Revision).\
+            g.db_session.query(Revision).\
                 filter(Revision.rev_num==page.draft_rev_num).\
                 filter(Revision.page==page).delete()
             page.draft_rev_num = None
-            g.session.commit()
+            g.db_session.commit()
         if page.page_name is None:
             url = url_for('user_home', uid=page.acct.uid)
         else:
@@ -397,10 +447,16 @@ def handle_page_edit(page):
 
         # persist
         page.private = private
+        if page.draft_rev_num is not None:
+            # delete any previous draft
+            g.db_session.query(Revision).\
+                filter(Revision.rev_num==page.draft_rev_num).\
+                filter(Revision.page==page).delete()
+            page.draft_rev_num = None
         page.create_draft_rev(text, use_markdown)
         if publish:
             page.publish_draft_rev()
-        g.session.commit()
+        g.db_session.commit()
 
         # redirect to view page
         if page.page_name is None:
@@ -409,39 +465,9 @@ def handle_page_edit(page):
             url = url_for('user_page', uid=page.acct.uid, page_name=page.page_name)
         return redirect(url)
 
-def main():
-
-    # set up some args for enabling debug or reload mode
-    import argparse
-    p = argparse.ArgumentParser()
-    p.add_argument('-d', action='store_true', dest='debug_mode', default=False)
-    p.add_argument('-r', action='store_true', dest='reload_mode', default=False)
-    cmd_args = p.parse_args()
-
-    # set up app options
-    app_options = {
-        'port': app.config['PORT'],
-        'host': '0.0.0.0',
-        'debug': cmd_args.debug_mode, # show tracebacks in pycharm
-        'use_debugger': cmd_args.debug_mode or cmd_args.reload_mode, # show tracebacks in browser
-        'use_reloader': cmd_args.reload_mode # reload files on change
-    }
-
-    if cmd_args.reload_mode:
-        # add static and template files to reloader
-        extra_dirs = ['%s/static' % app_path, '%s/templates' % app_path]
-        extra_files = extra_dirs[:]
-        for extra_dir in extra_dirs:
-            for dirname, dirs, files in os.walk(extra_dir):
-                for filename in files:
-                    if not filename.startswith('.'): # exclude vim swap files, etc.
-                        filename = os.path.join(dirname, filename)
-                        if os.path.isfile(filename):
-                            extra_files.append(filename)
-        app_options['extra_files'] = extra_files
-
-    # run the app
-    app.run(**app_options)
+def render_template(template_name, **vals):
+    template = templates[template_name]
+    return template.render(**vals)
 
 if __name__ == '__main__':
     main()

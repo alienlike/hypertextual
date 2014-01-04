@@ -1,7 +1,7 @@
 import unittest
 from sqlalchemy import create_engine
 from config import CONN_STR_TEST
-from models import DBSession, DeclarativeBase, Account, Page, Revision
+from models import db_session, DeclarativeBase, Account, Page, Revision
 import re
 from htlinks import HT_LINK_RE
 
@@ -10,19 +10,19 @@ class AlchemyTestBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         engine = create_engine(CONN_STR_TEST)
-        DBSession.configure(bind=engine)
+        db_session.configure(bind=engine)
         DeclarativeBase.metadata.bind = engine
         DeclarativeBase.metadata.create_all(engine)
 
     @classmethod
     def tearDownClass(cls):
-        DBSession.remove()
+        db_session.remove()
         DeclarativeBase.metadata.drop_all()
 
     def setUp(self): pass
 
     def tearDown(self):
-        DBSession.rollback()
+        db_session.rollback()
 
 class TestBasic(AlchemyTestBase):
 
@@ -43,8 +43,8 @@ class TestBasic(AlchemyTestBase):
         self.assertEqual(p.id, None)
         self.assertEqual(r.id, None)
 
-        DBSession.add(r)
-        DBSession.flush()
+        db_session.add(r)
+        db_session.flush()
 
         self.assertEqual( type(a.id), int)
         self.assertEqual( type(p.id), int )
@@ -59,15 +59,15 @@ class TestBasic(AlchemyTestBase):
         a.pw = 'secret'
 
         p = Page()
-        p.set_title(DBSession, a, '!@#% Home')
+        p.set_title(db_session, a, '!@#% Home')
         p.create_draft_rev('my !@#% home page yo', True)
         p.acct = a
 
-        DBSession.add(p)
-        DBSession.flush()
+        db_session.add(p)
+        db_session.flush()
 
         p2 = Page()
-        p2.set_title(DBSession, a, 'Home')
+        p2.set_title(db_session, a, 'Home')
         p2.create_draft_rev('my home page yo', True)
         p2.acct = a
 
