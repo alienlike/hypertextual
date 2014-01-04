@@ -8,15 +8,31 @@ a {
 }
 
 a.link-same-user {
-    color: orange;
+    color: black;
 }
 
-a.link-different-user {
+a.link-other-user {
     color: blue;
 }
 
-a.link-create-page {
+a.link-create {
+    color: #ff4500;
+}
+
+a.link-does-not-exist {
     color: red;
+}
+
+a.link-redirected {
+    color: orange;
+}
+
+a.link-private {
+    color: #8a2be2;
+}
+
+a.link-external {
+    color: green;
 }
 
 .error-message {

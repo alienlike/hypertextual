@@ -7,7 +7,7 @@
 - database-driven page links
 - private pages
 - rename/redirect a page
-- link styles: redirected/does not exist/private page linked on public page
+- link styles: create/does not exist/redirected/private
 
 *features*
 
