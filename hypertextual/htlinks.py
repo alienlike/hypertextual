@@ -25,7 +25,7 @@ def build_url(session, current_uid, page_uid, link_uid, title):
 
     exists = True
     try:
-        page = session.query(Page).\
+        page = Page.query.\
             join(Account.pages).\
             filter(Page.title==title, Account.uid==link_uid).one()
         if page.user_can_view(current_uid):

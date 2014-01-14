@@ -2,20 +2,19 @@ import os, re, argparse
 from flask import Flask, request, session, g, redirect, url_for, abort
 from chameleon import PageTemplateLoader
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-from models import Page, Account, Revision
+from models import db_session, Page, Account, Revision
 from render import render_text_to_html, render_markdown_to_html
 from validate_email import validate_email
 
 app = Flask(__name__)
-DBSession = None
 site_url = None
 app_path = None
 templates = None
 
 def main():
     configure_flask_app()
+    configure_db_session()
     set_globals()
     command_line_args = get_command_line_args()
     app_options = get_app_options(command_line_args)
@@ -24,19 +23,16 @@ def main():
 def configure_flask_app():
     app.config.from_object('config')
 
+def configure_db_session():
+    conn_str = app.config['CONN_STR']
+    engine = create_engine(conn_str)
+    db_session.configure(bind=engine)
+
 def set_globals():
-    global DBSession, site_url, app_path, templates
-    DBSession = create_alchemy_session_factory()
+    global site_url, app_path, templates
     site_url = get_site_url()
     app_path = get_app_path()
     templates = get_chameleon_templates()
-
-def create_alchemy_session_factory():
-    conn_str = app.config['CONN_STR']
-    engine = create_engine(conn_str)
-    session_factory = sessionmaker()
-    session_factory.configure(bind=engine)
-    return session_factory
 
 def get_site_url():
     site_url = app.config['SITE_URL']
@@ -84,20 +80,26 @@ def get_static_files_for_reload_mode():
 
 @app.before_request
 def before_request():
-    g.db_session = DBSession() # create a new db session for each request
-    g.current_user = get_current_user_from_session() # current_user is kept in session between requests
+    g.current_user = get_current_user_from_session()
 
 def get_current_user_from_session():
+    # retrieve current_user from session, where it is kept between requests
     current_user = session.get('current_user', None)
     if current_user:
         # current_user will have been detached from its db session in a prior request;
         # merge it with the current db session to avoid a DetachedInstanceError
-        current_user = g.db_session.merge(current_user)
+        current_user = db_session.merge(current_user)
     return current_user
 
 @app.teardown_request
-def teardown_request(exception):
-    g.db_session.close()
+def teardown_request(exception=None):
+    db_session.commit()
+
+@app.teardown_appcontext
+def teardown_appcontext(exception=None):
+    # remove database session at the end of the request,
+    # or when the application shuts down
+    db_session.remove()
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -110,7 +112,7 @@ def page_not_found(e):
 @app.route('/')
 def site_home():
     # get users
-    accts = g.db_session.query(Account).order_by(Account.uid).all()
+    accts = Account.query.order_by(Account.uid).all()
     # show index page
     vals = {
         'g': g,
@@ -130,7 +132,7 @@ def login():
     if request.method == 'POST':
         # check that uid exists
         uid = request.form['uid'].strip().lower()
-        acct = g.db_session.query(Account).filter(Account.uid==uid).first()
+        acct = Account.query.filter(Account.uid==uid).first()
         if acct is not None:
             # validate password
             pw = request.form['pw']
@@ -179,8 +181,8 @@ def create_acct():
         valid = True
 
         # check whether uid or email already exist
-        uid_exists = g.db_session.query(Account).filter(Account.uid==uid).first() is not None
-        email_exists = email and g.db_session.query(Account).filter(Account.email==email).first() is not None
+        uid_exists = Account.query.filter(Account.uid==uid).first() is not None
+        email_exists = email and Account.query.filter(Account.email==email).first() is not None
 
         reserved_names = ['site','account','docs','doc','help','admin','administrator',
                           'edit','create','api','rss','json','xml','html','css','js']
@@ -212,8 +214,7 @@ def create_acct():
 
             # create account
             acct = Account(uid, pw, email)
-            g.db_session.add(acct)
-            g.db_session.commit()
+            db_session.add(acct)
 
             # add account to session
             session['current_user'] = acct
@@ -249,13 +250,13 @@ def user_home(uid):
 
         # get account by uid; abort if not found
         try:
-            acct = g.db_session.query(Account).filter(Account.uid==uid).one()
+            acct = Account.query.filter(Account.uid==uid).one()
         except NoResultFound:
             abort(404)
 
         # redirect to the page if the title exists
         title = request.args.get('title', '').strip()
-        page = g.db_session.query(Page).\
+        page = Page.query.\
             filter(Page.title==title).\
             filter(Page.acct==acct).first()
         if page:
@@ -276,13 +277,13 @@ def user_page(uid, page_name):
 
     # get account by uid; abort if not found
     try:
-        acct = g.db_session.query(Account).filter(Account.uid==uid).one()
+        acct = Account.query.filter(Account.uid==uid).one()
     except NoResultFound:
         abort(404)
 
     # get page by page_name; abort if not found
     try:
-        page = g.db_session.query(Page).\
+        page = Page.query.\
             filter(Page.page_name==page_name).\
             filter(Page.acct==acct).one()
     except NoResultFound:
@@ -339,9 +340,9 @@ def render_page_view(page, rev_num=None):
     if rev_num is not None:
         rev = page.revs[rev_num]
         if rev.use_markdown:
-            page_html = render_markdown_to_html(g.db_session, g.current_user, page, rev_num)
+            page_html = render_markdown_to_html(db_session, g.current_user, page, rev_num)
         else:
-            page_html = render_text_to_html(g.db_session, g.current_user, page, rev_num)
+            page_html = render_text_to_html(db_session, g.current_user, page, rev_num)
 
     # return the rendered page template
     vals = {
@@ -356,7 +357,7 @@ def render_page_view(page, rev_num=None):
 def render_page_create(acct, title):
 
     # create a new page
-    page = Page(g.db_session, acct, title)
+    page = Page(db_session, acct, title)
     page.create_draft_rev('', True)
 
     # render the edit page
@@ -390,7 +391,7 @@ def handle_page_create(acct, title):
     elif save_draft or publish:
 
         # create a new page
-        page = Page(g.db_session, acct, title)
+        page = Page(db_session, acct, title)
         page.private = private
         page.create_draft_rev(page_text, use_markdown)
 
@@ -398,7 +399,6 @@ def handle_page_create(acct, title):
         if publish:
             page.publish_draft_rev()
         g.current_user.pages.append(page)
-        g.db_session.commit()
 
         # redirect to view page
         url = url_for('user_page', uid=acct.uid, page_name=page.page_name)
@@ -432,11 +432,10 @@ def handle_page_edit(page):
 
     if revert or cancel:
         if revert:
-            g.db_session.query(Revision).\
+            Revision.query.\
                 filter(Revision.rev_num==page.draft_rev_num).\
                 filter(Revision.page==page).delete()
             page.draft_rev_num = None
-            g.db_session.commit()
         if page.page_name is None:
             url = url_for('user_home', uid=page.acct.uid)
         else:
@@ -449,14 +448,13 @@ def handle_page_edit(page):
         page.private = private
         if page.draft_rev_num is not None:
             # delete any previous draft
-            g.db_session.query(Revision).\
+            Revision.query.\
                 filter(Revision.rev_num==page.draft_rev_num).\
                 filter(Revision.page==page).delete()
             page.draft_rev_num = None
         page.create_draft_rev(text, use_markdown)
         if publish:
             page.publish_draft_rev()
-        g.db_session.commit()
 
         # redirect to view page
         if page.page_name is None:

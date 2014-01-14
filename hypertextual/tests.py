@@ -1,8 +1,7 @@
-import unittest
+import unittest, re
 from sqlalchemy import create_engine
 from config import CONN_STR_TEST
-from models import db_session, DeclarativeBase, Account, Page, Revision
-import re
+from models import db_session, Base, Account, Page
 from htlinks import HT_LINK_RE
 
 class AlchemyTestBase(unittest.TestCase):
@@ -11,15 +10,16 @@ class AlchemyTestBase(unittest.TestCase):
     def setUpClass(cls):
         engine = create_engine(CONN_STR_TEST)
         db_session.configure(bind=engine)
-        DeclarativeBase.metadata.bind = engine
-        DeclarativeBase.metadata.create_all(engine)
+        Base.metadata.bind = engine
+        Base.metadata.create_all(engine)
 
     @classmethod
     def tearDownClass(cls):
         db_session.remove()
-        DeclarativeBase.metadata.drop_all()
+        Base.metadata.drop_all()
 
-    def setUp(self): pass
+    def setUp(self):
+        pass
 
     def tearDown(self):
         db_session.rollback()
@@ -54,9 +54,9 @@ class TestBasic(AlchemyTestBase):
 
     def test_create_page_name(self):
 
-        a = Account()
-        a.uid = 'samiam'
-        a.pw = 'secret'
+        uid = 'samiam'
+        pw = 'secret'
+        a = Account(uid, pw)
 
         p = Page()
         p.set_title(db_session, a, '!@#% Home')

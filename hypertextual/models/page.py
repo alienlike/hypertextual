@@ -1,10 +1,10 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from .base import DeclarativeBase
-from .rev import Revision
+from db import Base
+from rev import Revision
 
-class Page(DeclarativeBase):
+class Page(Base):
 
     # table
     __tablename__ = 'page'
@@ -93,7 +93,7 @@ class Page(DeclarativeBase):
             pass
 
         # ensure uniqueness of name
-        exists = lambda name: session.query(Page).\
+        exists = lambda name: Page.query.\
             filter(Page.page_name==name).\
             filter(Page.acct==account).count()
         name_to_test = page_name

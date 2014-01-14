@@ -1,9 +1,9 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-from .base import DeclarativeBase
+from db import Base
 
-class Revision(DeclarativeBase):
+class Revision(Base):
 
     # table
     __tablename__ = 'rev'

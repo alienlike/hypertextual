@@ -1,6 +1,6 @@
 from flask import Flask
 from sqlalchemy import create_engine
-from models.base import DeclarativeBase
+from models import Base
 
 def main():
     app = create_flask_app()
@@ -18,9 +18,9 @@ def create_alchemy_engine(app):
     return engine
 
 def recreate_db_objects(engine):
-    DeclarativeBase.metadata.bind = engine
-    DeclarativeBase.metadata.drop_all()
-    DeclarativeBase.metadata.create_all(engine)
+    Base.metadata.bind = engine
+    Base.metadata.drop_all()
+    Base.metadata.create_all(engine)
 
 if __name__=='__main__':
     main()

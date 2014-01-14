@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
-from .base import DeclarativeBase
+from db import Base
 
-class Link(DeclarativeBase):
+class Link(Base):
 
     # table
     __tablename__ = 'link'

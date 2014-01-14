@@ -2,10 +2,10 @@ from flaskext.bcrypt import generate_password_hash, check_password_hash
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
-from .base import DeclarativeBase
-from .page import Page
+from db import Base
+from page import Page
 
-class Account(DeclarativeBase):
+class Account(Base):
 
     # table
     __tablename__ = 'acct'
