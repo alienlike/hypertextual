@@ -30,20 +30,17 @@ class TestBasic(AlchemyTestBase):
 
         uid = 'samiam'
         pw = 'secret'
-        a = Account(uid, pw)
+        a = Account.new(uid, pw)
 
-        p = Page()
-        p.acct = a
-        p.page_name = '_home'
-        p.title = 'Home'
+        title = 'Home'
+        p = Page.new(a, title)
         p.create_draft_rev('my home page yo', True)
         r = p.get_draft_rev()
 
-        self.assertEqual(a.id, None)
-        self.assertEqual(p.id, None)
+        self.assertIsNotNone(a.id)
+        self.assertIsNotNone(p.id)
         self.assertEqual(r.id, None)
 
-        db_session.add(r)
         db_session.flush()
 
         self.assertEqual( type(a.id), int)
@@ -56,18 +53,18 @@ class TestBasic(AlchemyTestBase):
 
         uid = 'samiam'
         pw = 'secret'
-        a = Account(uid, pw)
+        a = Account.new(uid, pw)
 
-        p = Page()
-        p.set_title(db_session, a, '!@#% Home')
+        title = '!@#% Home'
+        p = Page.new(a, title)
         p.create_draft_rev('my !@#% home page yo', True)
         p.acct = a
 
         db_session.add(p)
         db_session.flush()
 
-        p2 = Page()
-        p2.set_title(db_session, a, 'Home')
+        title = 'Home'
+        p2 = Page.new(a, title)
         p2.create_draft_rev('my home page yo', True)
         p2.acct = a
 

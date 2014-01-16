@@ -9,4 +9,3 @@ CONN_STR_TEST = 'postgresql://nw@localhost:5432/hypertextual_test'
 SECRET_KEY = 'development key'
 USERNAME = 'admin'
 PASSWORD = 'default'
-BCRYPT_COMPLEXITY = 12

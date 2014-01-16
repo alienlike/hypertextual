@@ -213,8 +213,7 @@ def create_acct():
         if valid:
 
             # create account
-            acct = Account(uid, pw, email)
-            db_session.add(acct)
+            acct = Account.new(uid, pw, email)
 
             # add account to session
             session['current_user'] = acct
@@ -357,7 +356,7 @@ def render_page_view(page, rev_num=None):
 def render_page_create(acct, title):
 
     # create a new page
-    page = Page(db_session, acct, title)
+    page = Page.new(acct, title)
     page.create_draft_rev('', True)
 
     # render the edit page
@@ -391,7 +390,7 @@ def handle_page_create(acct, title):
     elif save_draft or publish:
 
         # create a new page
-        page = Page(db_session, acct, title)
+        page = Page.new(acct, title)
         page.private = private
         page.create_draft_rev(page_text, use_markdown)
 

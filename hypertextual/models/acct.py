@@ -2,7 +2,7 @@ from flaskext.bcrypt import generate_password_hash, check_password_hash
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
-from db import Base
+from db import Base, db_session
 from page import Page
 
 class Account(Base):
@@ -21,36 +21,8 @@ class Account(Base):
     # relationship
     pages = relationship('Page', order_by='Page.id', backref='acct')
 
-    def __init__(self, uid, pw, email=None):
-
-        # create new user
-        self.uid = uid
-        if not email:
-            email = None
-        self.email = email
-        self.set_password(pw)
-
-        # create home page for new user
-        page1 = Page()
-        page1.title = 'Home'
-        page1.page_name = None
-        page1.create_draft_rev(
-            'Welcome to hypertextual. This is your home page.', True)
-        page1.publish_draft_rev()
-        page1.acct = self
-
-        # create private home page for new user
-        page2 = Page()
-        page2.title = 'Private Home'
-        page2.page_name = '_private'
-        page2.private = True
-        page2.create_draft_rev(
-            'Welcome to hypertextual. This is your private home page.', True)
-        page2.publish_draft_rev()
-        page2.acct = self
-
     def set_password(self, password):
-        from config import BCRYPT_COMPLEXITY
+        BCRYPT_COMPLEXITY = 12
         self.pw_hash = generate_password_hash(password, BCRYPT_COMPLEXITY)
 
     def reset_password(self, old_password, new_password):
@@ -65,7 +37,45 @@ class Account(Base):
         valid = check_password_hash(self.pw_hash, password)
         return valid
 
-    def parse_bcrypt_complexity(self, bcrypt_hash):
+    @classmethod
+    def new(cls, uid, pw, email=None):
+        acct = cls.__create_acct(uid, pw, email)
+        cls.__create_home_page(acct)
+        cls.__create_private_home_page(acct)
+        db_session.add(acct)
+        return acct
+
+    @classmethod
+    def __create_acct(cls, uid, pw, email=None):
+        acct = Account()
+        acct.uid = uid
+        if not email:
+            email = None
+        acct.email = email
+        acct.set_password(pw)
+        return acct
+
+    @classmethod
+    def __create_home_page(cls, acct):
+        home_page_title = 'Home'
+        home_page_text = 'Welcome to hypertextual. This is your home page.'
+        home_page = Page.new(acct, home_page_title)
+        home_page.page_name = None
+        home_page.create_draft_rev(home_page_text, True)
+        home_page.publish_draft_rev()
+
+    @classmethod
+    def __create_private_home_page(cls, acct):
+        private_home_page_title = 'Private Home'
+        private_home_page_text = 'Welcome to hypertextual. This is your private home page.'
+        private_home_page = Page.new(acct, private_home_page_title)
+        private_home_page.page_name = '_private'
+        private_home_page.private = True
+        private_home_page.create_draft_rev(private_home_page_text, True)
+        private_home_page.publish_draft_rev()
+
+    @staticmethod
+    def __parse_bcrypt_complexity(bcrypt_hash):
         # see http://stackoverflow.com/a/6833165/204900
         hash_complexity = int(bcrypt_hash.split('$')[2])
         return hash_complexity

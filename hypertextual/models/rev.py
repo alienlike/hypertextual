@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-from db import Base
+from db import Base, db_session
 
 class Revision(Base):
 
@@ -23,3 +23,10 @@ class Revision(Base):
 
     def get_text(self):
         return self.page.get_text_for_rev(self.rev_num)
+
+    @classmethod
+    def new(cls, page):
+        rev = Revision()
+        page.revs.append(rev)
+        db_session.add(rev)
+        return rev
