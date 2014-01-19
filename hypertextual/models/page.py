@@ -112,11 +112,14 @@ class Page(Base):
                 patches = dmp.patch_fromText(rev.patch_text)
                 text = dmp.patch_apply(patches, text)[0]
         return text
+
+    def new_rev(self):
+        rev = Revision.new(self)
+        return rev
     
     @classmethod
     def new(cls, acct, title):
-        # todo: replace with column defaults?
-        page = Page()
+        page = cls()
         acct.pages.append(page)
         cls.__set_title(page, title)
         page.curr_text = ''

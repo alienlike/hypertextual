@@ -37,6 +37,10 @@ class Account(Base):
         valid = check_password_hash(self.pw_hash, password)
         return valid
 
+    def new_page(self, title):
+        page = Page.new(self, title)
+        return page
+
     @classmethod
     def new(cls, uid, pw, email=None):
         acct = cls.__create_acct(uid, pw, email)
@@ -47,7 +51,7 @@ class Account(Base):
 
     @classmethod
     def __create_acct(cls, uid, pw, email=None):
-        acct = Account()
+        acct = cls()
         acct.uid = uid
         if not email:
             email = None

@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
-from db import Base
+from db import Base, db_session
 
 class Link(Base):
 
@@ -18,3 +18,10 @@ class Link(Base):
 
     # relationships
     rev = None #-> Revision.links
+
+    @classmethod
+    def new(cls, rev):
+        link = cls()
+        rev.links.append(link)
+        db_session.add(link)
+        return link

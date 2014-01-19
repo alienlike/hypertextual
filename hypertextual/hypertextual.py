@@ -4,7 +4,6 @@ from chameleon import PageTemplateLoader
 from sqlalchemy import create_engine
 from sqlalchemy.orm.exc import NoResultFound
 from models import db_session, Page, Account, Revision
-from render import render_text_to_html, render_markdown_to_html
 from validate_email import validate_email
 
 app = Flask(__name__)
@@ -338,10 +337,7 @@ def render_page_view(page, rev_num=None):
     page_html = ''
     if rev_num is not None:
         rev = page.revs[rev_num]
-        if rev.use_markdown:
-            page_html = render_markdown_to_html(db_session, g.current_user, page, rev_num)
-        else:
-            page_html = render_text_to_html(db_session, g.current_user, page, rev_num)
+        page_html = rev.render_to_html(g.current_user)
 
     # return the rendered page template
     vals = {

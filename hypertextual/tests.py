@@ -2,7 +2,7 @@ import unittest, re
 from sqlalchemy import create_engine
 from config import CONN_STR_TEST
 from models import db_session, Base, Account, Page
-from htlinks import HT_LINK_RE
+from models.htlinks import HT_LINK_RE
 
 class AlchemyTestBase(unittest.TestCase):
 

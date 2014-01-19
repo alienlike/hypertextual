@@ -1,10 +1,10 @@
-from __future__ import absolute_import
 from __future__ import unicode_literals
 from markdown import Extension
 from markdown.inlinepatterns import Pattern
 from markdown.util import etree
 from sqlalchemy.orm.exc import NoResultFound
-from models import Page, Account
+from acct import Account
+from page import Page
 from config import SITE_URL
 
 # An explanation of the regex below:
@@ -16,7 +16,7 @@ from config import SITE_URL
 #    \]\]                                         (close brackets)
 HT_LINK_RE = r'\[\[(?:[ ]*(?P<uid>[a-zA-Z][a-zA-Z0-9]*)[ ]*::)?(?!.*::)(?P<title>[^|\t\n\r\f\v]+)(?:\|(?P<alias>[^|\t\n\r\f\v]+))?\]\]'
 
-def build_url(session, current_uid, page_uid, link_uid, title):
+def build_url(current_uid, page_uid, link_uid, title):
 
     # if no link uid, we assume the linked page
     # belongs to the same user as the linking page
@@ -42,15 +42,40 @@ def build_url(session, current_uid, page_uid, link_uid, title):
 
     return url, exists
 
+def render_a_tag(current_uid, page_uid, match):
+
+    elems = match.groupdict()
+    link_uid = elems['uid'].strip() if elems['uid'] is not None else None
+    title = elems['title'].strip() if elems['title'] is not None else None
+    alias = elems['alias'].strip() if elems['alias'] is not None else None
+
+    # alias is optional; use page title otherwise
+    alias = alias or title
+
+    url, exists = build_url(
+        current_uid,
+        page_uid,
+        link_uid,
+        title
+    )
+
+    # todo: set classes for all conditions
+    class_html = ''
+    if not exists:
+        class_html = ' class="link-create-page"'
+
+    html = '<a href="%s"%s>%s</a>' % (url, class_html, alias)
+
+    return html
+
 class HypertextualLinkExtension(Extension):
 
     def __init__(self, configs):
         # set extension defaults
         self.config = {
             'current_uid' : [None, 'Account uid.'],
-            'page_uid' : [None, 'Page uid.'],
-            'session' : [None, 'SQLAlchemy session instance.'],
-            }
+            'page_uid' : [None, 'Page uid.']
+        }
 
         # Override defaults with user settings
         for key, value in configs:
@@ -78,11 +103,9 @@ class HypertextualLinks(Pattern):
         alias = elems['alias'].strip() if elems['alias'] is not None else None
 
         # alias is optional; use page title otherwise
-        if not alias:
-            alias = title
+        alias = alias or title
 
         url, exists = build_url(
-            self.config['session'],
             self.config['current_uid'],
             self.config['page_uid'],
             link_uid,
@@ -103,8 +126,7 @@ class HypertextualLinks(Pattern):
         """ Return meta data or config data. """
         current_uid = self.config['current_uid']
         page_uid = self.config['page_uid']
-        session = self.config['session']
-        return current_uid, page_uid, session
+        return current_uid, page_uid
 
 def makeExtension(configs=None):
     return HypertextualLinkExtension(configs=configs)
