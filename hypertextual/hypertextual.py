@@ -337,7 +337,7 @@ def render_page_view(page, rev_num=None):
     page_html = ''
     if rev_num is not None:
         rev = page.revs[rev_num]
-        page_html = rev.render_to_html(g.current_user)
+        page_html = rev.render_to_html(g.current_user.uid)
 
     # return the rendered page template
     vals = {
