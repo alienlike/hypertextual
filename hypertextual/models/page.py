@@ -1,7 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from config import SITE_URL
 from db import Base, db_session
 from rev import Revision
 
@@ -46,7 +45,7 @@ class Page(Base):
 
     def get_url(self, rev_num=None):
         # start with uid
-        url = '%s/%s' % (SITE_URL, self.acct.uid)
+        url = '/%s' % self.acct.uid
         if self.page_name is not None:
             # add page name if required
             url += '/%s' % self.page_name

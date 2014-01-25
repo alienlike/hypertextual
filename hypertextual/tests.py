@@ -2,7 +2,7 @@ import unittest, re
 from sqlalchemy import create_engine
 from config import CONN_STR_TEST
 from models import db_session, Base, Account, Page
-from models.htlinks import HT_LINK_RE
+from models.md import HT_LINK_RE, HT_PLACEHOLDER_RE
 
 class AlchemyTestBase(unittest.TestCase):
 
@@ -98,6 +98,42 @@ class TestRegex(unittest.TestCase):
         print c.groups()
         print d.groupdict()
         print h.groups()
+
+    def test_placeholder_regex(self):
+        regex = HT_PLACEHOLDER_RE
+        a = re.match(regex, '[[abc]]')
+        b = re.match(regex, '[[b]]')
+        c = re.match(regex, '[[1b]]')
+        d = re.match(regex, '[[c3]]')
+        e = re.match(regex, '[[01]]')
+        f = re.match(regex, '[[0]]')
+        g = re.match(regex, '[[1]]')
+        h = re.match(regex, '[[30]]')
+        aa = re.match(regex, 'abc')
+        bb = re.match(regex, 'b')
+        cc = re.match(regex, '1b')
+        dd = re.match(regex, 'c3')
+        ee = re.match(regex, '01')
+        ff = re.match(regex, '0')
+        gg = re.match(regex, '1')
+        hh = re.match(regex, '30')
+        self.assertIsNone(a)
+        self.assertIsNone(b)
+        self.assertIsNone(c)
+        self.assertIsNone(d)
+        self.assertIsNotNone(e)
+        self.assertIsNotNone(f)
+        self.assertIsNotNone(g)
+        self.assertIsNotNone(h)
+        self.assertEqual(h.groupdict()['linknum'], '30')
+        self.assertIsNone(aa)
+        self.assertIsNone(bb)
+        self.assertIsNone(cc)
+        self.assertIsNone(dd)
+        self.assertIsNone(ee)
+        self.assertIsNone(ff)
+        self.assertIsNone(gg)
+        self.assertIsNone(hh)
 
 if __name__ == '__main__':
     unittest.main()
