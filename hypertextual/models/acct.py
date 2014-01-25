@@ -19,7 +19,7 @@ class Account(Base):
     pw_hash = Column(String, nullable=False)
 
     # relationship
-    pages = relationship('Page', order_by='Page.id', backref='acct')
+    pages = relationship(Page, order_by='Page.id', backref='acct')
 
     def set_password(self, password):
         BCRYPT_COMPLEXITY = 12
@@ -65,7 +65,7 @@ class Account(Base):
         home_page_text = 'Welcome to hypertextual. This is your home page.'
         home_page = Page.new(acct, home_page_title)
         home_page.page_name = None
-        home_page.create_draft_rev(home_page_text, True)
+        home_page.save_draft_rev(home_page_text, True)
         home_page.publish_draft_rev()
 
     @classmethod
@@ -75,7 +75,7 @@ class Account(Base):
         private_home_page = Page.new(acct, private_home_page_title)
         private_home_page.page_name = '_private'
         private_home_page.private = True
-        private_home_page.create_draft_rev(private_home_page_text, True)
+        private_home_page.save_draft_rev(private_home_page_text, True)
         private_home_page.publish_draft_rev()
 
     @staticmethod

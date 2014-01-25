@@ -3,9 +3,12 @@ from datetime import datetime
 from markdown import markdown
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
+from diff_match_patch.diff_match_patch import diff_match_patch
 from db import Base, db_session
 from link import Link
 from htlinks import HypertextualLinkExtension, render_a_tag, HT_LINK_RE
+
+# TODO: do some caching of current / draft text
 
 class Revision(Base):
 
@@ -23,10 +26,46 @@ class Revision(Base):
 
     # relationships
     page = None #-> Page.revs
-    links = relationship('Link', order_by='Link.link_num', backref='rev')
+    links = relationship(Link, order_by='Link.link_num', backref='rev')
+
+    def set_text(self, text):
+        raw_text = self.__extract_links_from_text(text)
+        self.__set_patch_text_from_raw_text(raw_text)
 
     def get_text(self):
-        return self.page.get_text_for_rev(self.rev_num)
+        raw_text = self.__get_raw_text_from_patches()
+        text = self.__inject_links_into_text(raw_text)
+        return text
+
+    def __set_patch_text_from_raw_text(self, raw_text):
+        # diff raw text against the raw text of prior revision
+        prior_raw_text = ''
+        if self.rev_num > 0:
+            prior_rev = self.page.revs[self.rev_num-1]
+            prior_raw_text = prior_rev._Revision__get_raw_text_from_patches()
+        dmp = diff_match_patch()
+        patches = dmp.patch_make(prior_raw_text, raw_text)
+        self.patch_text = dmp.patch_toText(patches)
+
+    def __get_raw_text_from_patches(self):
+        # apply patches from rev 0 through current rev
+        # until the raw text has been reconstructed
+        dmp = diff_match_patch()
+        raw_text = ''
+        for rev in self.page.revs[0:self.rev_num+1]:
+            patches = dmp.patch_fromText(rev.patch_text)
+            raw_text = dmp.patch_apply(patches, raw_text)[0]
+        return raw_text
+
+    def __extract_links_from_text(self, text):
+        raw_text = text
+        # TODO: extract link info from text
+        return raw_text
+
+    def __inject_links_into_text(self, raw_text):
+        text = raw_text
+        # TODO: inject link info back into text
+        return text
 
     def render_to_html(self, current_user):
         if self.use_markdown:
@@ -55,10 +94,6 @@ class Revision(Base):
         ])
         html = markdown(text, extensions=[linkExt])
         return html
-
-    def new_link(self):
-        link = Link.new(self)
-        return link
 
     @classmethod
     def new(cls, page):

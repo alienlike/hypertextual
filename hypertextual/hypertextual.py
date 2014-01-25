@@ -353,7 +353,7 @@ def render_page_create(acct, title):
 
     # create a new page
     page = Page.new(acct, title)
-    page.create_draft_rev('', True)
+    page.save_draft_rev('', True)
 
     # render the edit page
     vals = {
@@ -388,7 +388,7 @@ def handle_page_create(acct, title):
         # create a new page
         page = Page.new(acct, title)
         page.private = private
-        page.create_draft_rev(page_text, use_markdown)
+        page.save_draft_rev(page_text, use_markdown)
 
         # persist
         if publish:
@@ -447,7 +447,7 @@ def handle_page_edit(page):
                 filter(Revision.rev_num==page.draft_rev_num).\
                 filter(Revision.page==page).delete()
             page.draft_rev_num = None
-        page.create_draft_rev(text, use_markdown)
+        page.save_draft_rev(text, use_markdown)
         if publish:
             page.publish_draft_rev()
 

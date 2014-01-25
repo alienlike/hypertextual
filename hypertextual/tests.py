@@ -34,7 +34,7 @@ class TestBasic(AlchemyTestBase):
 
         title = 'Home'
         p = Page.new(a, title)
-        p.create_draft_rev('my home page yo', True)
+        p.save_draft_rev('my home page yo', True)
         r = p.get_draft_rev()
 
         self.assertIsNotNone(a.id)
@@ -57,7 +57,7 @@ class TestBasic(AlchemyTestBase):
 
         title = '!@#% Home'
         p = Page.new(a, title)
-        p.create_draft_rev('my !@#% home page yo', True)
+        p.save_draft_rev('my !@#% home page yo', True)
         p.acct = a
 
         db_session.add(p)
@@ -65,7 +65,7 @@ class TestBasic(AlchemyTestBase):
 
         title = 'Home'
         p2 = Page.new(a, title)
-        p2.create_draft_rev('my home page yo', True)
+        p2.save_draft_rev('my home page yo', True)
         p2.acct = a
 
         self.assertEqual(p.page_name, "home")
