@@ -41,6 +41,14 @@ class Account(Base):
         page = Page.new(self, title)
         return page
 
+    def get_page_by_title(self, title):
+        page = Page.query.filter(Page.title==title).one()
+        return page
+
+    def get_page_by_name(self, page_name):
+        page = Page.query.filter(Page.page_name==page_name).one()
+        return page
+
     @classmethod
     def new(cls, uid, pw, email=None):
         acct = cls.__create_acct(uid, pw, email)

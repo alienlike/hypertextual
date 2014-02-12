@@ -3,8 +3,6 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from markdown.util import etree
 from sqlalchemy.orm.exc import NoResultFound
 from db import Base, db_session
-from acct import Account
-from page import Page
 
 class Link(Base):
 
@@ -63,6 +61,9 @@ class Link(Base):
         link_uid = self.tgt_page_uid or page_uid
         display_text = self.tgt_page_alias or self.tgt_page_title
         classes = []
+
+        from acct import Account
+        from page import Page
 
         try:
             page = Page.query.join(Account.pages).filter(Page.title==title, Account.uid==link_uid).one()

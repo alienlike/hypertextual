@@ -72,6 +72,7 @@ class Page(Base):
             rev = self.__create_draft_rev()
         rev.use_markdown = use_markdown
         rev.set_text(text)
+        return rev
 
     def __create_draft_rev(self):
         rev = Revision.new(self)
