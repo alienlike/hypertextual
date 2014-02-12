@@ -282,7 +282,138 @@ class TestRevision(AlchemyTestBase):
         self.assertEqual('<p>book list sample text <strong><a href="/scott">Home</a></strong></p>', html)
 
 class TestLink(AlchemyTestBase):
-    pass
+
+    def setUp(self):
+        self.scott = Account.new('scott', 'tiger', 'scott@gmail.com')
+        self.scott_page = Page.new(self.scott, 'Book List')
+        self.scott_rev = self.scott_page.save_draft_rev('book list sample text', True)
+        self.scott_page.publish_draft_rev()
+        self.sally = Account.new('sally', 'secret', 'sally@gmail.com')
+        self.sally_page = Page.new(self.sally, 'Dear Diary')
+        self.sally_rev = self.sally_page.save_draft_rev('today i am sad', True)
+        self.sally_page.publish_draft_rev()
+
+    def test_new(self):
+        rev = self.scott_rev
+        link = Link.new(rev, 0, 'sally', 'Dear Diary', 'Sally''s Diary')
+        self.assertEqual(0, link.link_num)
+        self.assertEqual('sally', link.tgt_page_uid)
+        self.assertEqual('Dear Diary', link.tgt_page_title)
+        self.assertEqual('Sally''s Diary', link.tgt_page_alias)
+
+    def test_link_to_self(self):
+        rev = self.scott_rev
+        link = Link.new(rev, 0, None, 'Book List', None)
+        link_text = link.get_link_text()
+        ph_text = link.get_placeholder_text()
+        link_html = link.get_link_html('scott')
+        md_elem = link.get_link_markdown_elem('scott')
+        self.assertEqual('[[Book List]]', link_text)
+        self.assertEqual('[[0]]', ph_text)
+        self.assertEqual('<a href="/scott/book-list">Book List</a>', link_html)
+        self.assertEqual('Book List', md_elem.text)
+        self.assertEqual('/scott/book-list', md_elem.get('href'))
+        self.assertIsNone(md_elem.get('class'))
+
+    def test_link_to_self_with_alias(self):
+        rev = self.scott_rev
+        link = Link.new(rev, 0, None, 'Book List', 'My books')
+        link_text = link.get_link_text()
+        ph_text = link.get_placeholder_text()
+        link_html = link.get_link_html('scott')
+        md_elem = link.get_link_markdown_elem('scott')
+        self.assertEqual('[[Book List|My books]]', link_text)
+        self.assertEqual('[[0]]', ph_text)
+        self.assertEqual('<a href="/scott/book-list">My books</a>', link_html)
+        self.assertEqual('My books', md_elem.text)
+        self.assertEqual('/scott/book-list', md_elem.get('href'))
+        self.assertIsNone(md_elem.get('class'))
+
+    def test_link_to_self_private(self):
+        self.scott_page.private = True
+        rev = self.scott_rev
+        link = Link.new(rev, 0, None, 'Book List', None)
+        link_text = link.get_link_text()
+        ph_text = link.get_placeholder_text()
+        link_html = link.get_link_html('scott')
+        md_elem = link.get_link_markdown_elem('scott')
+        self.assertEqual('[[Book List]]', link_text)
+        self.assertEqual('[[0]]', ph_text)
+        self.assertEqual('<a href="/scott/book-list">Book List</a>', link_html)
+        self.assertEqual('Book List', md_elem.text)
+        self.assertEqual('/scott/book-list', md_elem.get('href'))
+        self.assertIsNone(md_elem.get('class'))
+
+    def test_link_to_self_nonexistent(self):
+        rev = self.scott_rev
+        link = Link.new(rev, 0, None, 'Record Collection', None)
+        link_text = link.get_link_text()
+        ph_text = link.get_placeholder_text()
+        link_html = link.get_link_html('scott')
+        md_elem = link.get_link_markdown_elem('scott')
+        self.assertEqual('[[Record Collection]]', link_text)
+        self.assertEqual('[[0]]', ph_text)
+        self.assertEqual('<a href="/scott?action=create&title=Record Collection" class="link-create-page">Record Collection</a>', link_html)
+        self.assertEqual('Record Collection', md_elem.text)
+        self.assertEqual('/scott?action=create&title=Record Collection', md_elem.get('href'))
+        self.assertEqual('link-create-page', md_elem.get('class'))
+
+    def test_link_to_other(self):
+        rev = self.sally_rev
+        link = Link.new(rev, 0, 'scott', 'Book List', None)
+        link_text = link.get_link_text()
+        ph_text = link.get_placeholder_text()
+        link_html = link.get_link_html('sally')
+        md_elem = link.get_link_markdown_elem('sally')
+        self.assertEqual('[[scott::Book List]]', link_text)
+        self.assertEqual('[[0]]', ph_text)
+        self.assertEqual('<a href="/scott/book-list">Book List</a>', link_html)
+        self.assertEqual('Book List', md_elem.text)
+        self.assertEqual('/scott/book-list', md_elem.get('href'))
+        self.assertIsNone(md_elem.get('class'))
+
+    def test_link_to_other_with_alias(self):
+        rev = self.sally_rev
+        link = Link.new(rev, 0, 'scott', 'Book List', 'Scott''s books')
+        link_text = link.get_link_text()
+        ph_text = link.get_placeholder_text()
+        link_html = link.get_link_html('sally')
+        md_elem = link.get_link_markdown_elem('sally')
+        self.assertEqual('[[scott::Book List|Scott''s books]]', link_text)
+        self.assertEqual('[[0]]', ph_text)
+        self.assertEqual('<a href="/scott/book-list">Scott''s books</a>', link_html)
+        self.assertEqual('Scott''s books', md_elem.text)
+        self.assertEqual('/scott/book-list', md_elem.get('href'))
+        self.assertIsNone(md_elem.get('class'))
+
+    def test_link_to_other_private(self):
+        self.scott_page.private = True
+        rev = self.sally_rev
+        link = Link.new(rev, 0, 'scott', 'Book List', None)
+        link_text = link.get_link_text()
+        ph_text = link.get_placeholder_text()
+        link_html = link.get_link_html('sally')
+        md_elem = link.get_link_markdown_elem('sally')
+        self.assertEqual('[[scott::Book List]]', link_text)
+        self.assertEqual('[[0]]', ph_text)
+        self.assertEqual('<a href="#" class="link-does-not-exist">Book List</a>', link_html)
+        self.assertEqual('Book List', md_elem.text)
+        self.assertEqual('#', md_elem.get('href'))
+        self.assertEqual('link-does-not-exist', md_elem.get('class'))
+
+    def test_link_to_other_nonexistent(self):
+        rev = self.sally_rev
+        link = Link.new(rev, 0, 'scott', 'Record Collection', None)
+        link_text = link.get_link_text()
+        ph_text = link.get_placeholder_text()
+        link_html = link.get_link_html('sally')
+        md_elem = link.get_link_markdown_elem('sally')
+        self.assertEqual('[[scott::Record Collection]]', link_text)
+        self.assertEqual('[[0]]', ph_text)
+        self.assertEqual('<a href="#" class="link-does-not-exist">Record Collection</a>', link_html)
+        self.assertEqual('Record Collection', md_elem.text)
+        self.assertEqual('#', md_elem.get('href'))
+        self.assertEqual('link-does-not-exist', md_elem.get('class'))
 
 class TestRegex(unittest.TestCase):
 
@@ -306,11 +437,6 @@ class TestRegex(unittest.TestCase):
         self.assertIsNone(g)
         self.assertIsNotNone(h)
         self.assertIsNone(i)
-        #print a.groupdict()
-        #print b.groups()
-        #print c.groups()
-        #print d.groupdict()
-        #print h.groups()
 
     def test_placeholder_regex(self):
         regex = HT_PLACEHOLDER_RE
