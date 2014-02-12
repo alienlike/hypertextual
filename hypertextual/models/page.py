@@ -1,8 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from diff_match_patch.diff_match_patch import diff_match_patch
-from config import SITE_URL
 from db import Base, db_session
 from rev import Revision
 
@@ -19,13 +17,17 @@ class Page(Base):
     page_name = Column(String) # http://hypertextual/<page_name>
     title = Column(String)
     curr_rev_num = Column(Integer)
-    curr_text = Column(String)
     draft_rev_num = Column(Integer)
     private = Column(Boolean)
 
     # relationships
-    revs = relationship('Revision', order_by='Revision.id', backref='page', primaryjoin='Page.id==Revision.page_id')
+    revs = relationship(Revision, order_by='Revision.id', backref='page', primaryjoin='Page.id==Revision.page_id')
     acct = None #-> Account.pages
+
+    def __init__(self):
+        self.curr_rev_num = None
+        self.draft_rev_num = None
+        self.private = False
 
     def user_is_owner(self, acct_or_uid):
         try:
@@ -42,88 +44,51 @@ class Page(Base):
         return allow
 
     def get_url(self, rev_num=None):
-
         # start with uid
-        url = '%s/%s' % (SITE_URL, self.acct.uid)
-
-        # add page name if required
+        url = '/%s' % self.acct.uid
         if self.page_name is not None:
+            # add page name if required
             url += '/%s' % self.page_name
-
-        # add rev num if required
         if rev_num is not None and rev_num != self.curr_rev_num:
+            # add rev num if required
             url += '?rev=%s' % rev_num
-
         return url
 
     def get_curr_rev(self):
+        rev = None
         if self.curr_rev_num is not None:
-            return self.revs[self.curr_rev_num]
-        return None
+            rev = self.revs[self.curr_rev_num]
+        return rev
 
     def get_draft_rev(self):
+        rev = None
         if self.draft_rev_num is not None:
-            return self.revs[self.draft_rev_num]
-        return None
-
-    # create or update draft revision
-    def create_draft_rev(self, draft_text, use_markdown):
-
-        if self.draft_rev_num is not None:
-            # use existing draft revision
             rev = self.revs[self.draft_rev_num]
-        else:
-            # create new draft revision
-            rev = Revision.new(self)
-            rev.rev_num = \
-                0 if self.curr_rev_num is None else self.curr_rev_num + 1
-            self.draft_rev_num = rev.rev_num
+        return rev
+
+    def save_draft_rev(self, text, use_markdown):
+        rev = self.get_draft_rev()
+        if rev is None:
+            rev = self.__create_draft_rev()
         rev.use_markdown = use_markdown
+        rev.set_text(text)
+        return rev
 
-        # get patch text
-        rev.patch_text = ''
-        if draft_text != self.curr_text:
-            dmp = diff_match_patch()
-            patches = dmp.patch_make(self.curr_text, draft_text)
-            rev.patch_text = dmp.patch_toText(patches)
+    def __create_draft_rev(self):
+        rev = Revision.new(self)
+        rev.rev_num = 0 if self.curr_rev_num is None else self.curr_rev_num + 1
+        self.draft_rev_num = rev.rev_num
+        return rev
 
-        # keep the draft text intact, in case publish_draft_rev gets called
-        self.draft_text = draft_text
-
-    # promote the draft revision to current revision
     def publish_draft_rev(self):
-        # draft_text may or may not exist
-        self.curr_text = self.draft_text \
-            or self.get_text_for_rev(self.draft_rev_num)
         self.curr_rev_num = self.draft_rev_num
         self.draft_rev_num = None
 
-    # Get the text for a particular revision
-    def get_text_for_rev(self, rev_num):
-        if rev_num == self.curr_rev_num:
-            # current revision text is readily available
-            text = self.curr_text
-        else:
-            # prior revision text requires us to apply successive
-            # patches until the text has been reconstructed
-            dmp = diff_match_patch()
-            text = ''
-            for rev in self.revs[0:rev_num+1]:
-                patches = dmp.patch_fromText(rev.patch_text)
-                text = dmp.patch_apply(patches, text)[0]
-        return text
-    
     @classmethod
     def new(cls, acct, title):
-        # todo: replace with column defaults?
-        page = Page()
+        page = cls()
         acct.pages.append(page)
         cls.__set_title(page, title)
-        page.curr_text = ''
-        page.draft_text = ''
-        page.curr_rev_num = None
-        page.draft_rev_num = None
-        page.private = False
         db_session.add(page)
         return page
 
@@ -157,8 +122,8 @@ class Page(Base):
 
         # ensure uniqueness of name
         exists = lambda name: Page.query.\
-        filter(Page.page_name==name).\
-        filter(Page.acct==page.acct).count()
+            filter(Page.page_name==name).\
+            filter(Page.acct==page.acct).count()
         name_to_test = page_name
         i = 1
         while exists(name_to_test):

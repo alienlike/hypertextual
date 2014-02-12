@@ -4,7 +4,6 @@ from chameleon import PageTemplateLoader
 from sqlalchemy import create_engine
 from sqlalchemy.orm.exc import NoResultFound
 from models import db_session, Page, Account, Revision
-from render import render_text_to_html, render_markdown_to_html
 from validate_email import validate_email
 
 app = Flask(__name__)
@@ -338,10 +337,7 @@ def render_page_view(page, rev_num=None):
     page_html = ''
     if rev_num is not None:
         rev = page.revs[rev_num]
-        if rev.use_markdown:
-            page_html = render_markdown_to_html(db_session, g.current_user, page, rev_num)
-        else:
-            page_html = render_text_to_html(db_session, g.current_user, page, rev_num)
+        page_html = rev.render_to_html(g.current_user.uid)
 
     # return the rendered page template
     vals = {
@@ -357,7 +353,7 @@ def render_page_create(acct, title):
 
     # create a new page
     page = Page.new(acct, title)
-    page.create_draft_rev('', True)
+    page.save_draft_rev('', True)
 
     # render the edit page
     vals = {
@@ -392,7 +388,7 @@ def handle_page_create(acct, title):
         # create a new page
         page = Page.new(acct, title)
         page.private = private
-        page.create_draft_rev(page_text, use_markdown)
+        page.save_draft_rev(page_text, use_markdown)
 
         # persist
         if publish:
@@ -451,7 +447,7 @@ def handle_page_edit(page):
                 filter(Revision.rev_num==page.draft_rev_num).\
                 filter(Revision.page==page).delete()
             page.draft_rev_num = None
-        page.create_draft_rev(text, use_markdown)
+        page.save_draft_rev(text, use_markdown)
         if publish:
             page.publish_draft_rev()
 

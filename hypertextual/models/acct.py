@@ -19,7 +19,7 @@ class Account(Base):
     pw_hash = Column(String, nullable=False)
 
     # relationship
-    pages = relationship('Page', order_by='Page.id', backref='acct')
+    pages = relationship(Page, order_by='Page.id', backref='acct')
 
     def set_password(self, password):
         BCRYPT_COMPLEXITY = 12
@@ -37,6 +37,18 @@ class Account(Base):
         valid = check_password_hash(self.pw_hash, password)
         return valid
 
+    def new_page(self, title):
+        page = Page.new(self, title)
+        return page
+
+    def get_page_by_title(self, title):
+        page = Page.query.filter(Page.title==title).one()
+        return page
+
+    def get_page_by_name(self, page_name):
+        page = Page.query.filter(Page.page_name==page_name).one()
+        return page
+
     @classmethod
     def new(cls, uid, pw, email=None):
         acct = cls.__create_acct(uid, pw, email)
@@ -47,7 +59,7 @@ class Account(Base):
 
     @classmethod
     def __create_acct(cls, uid, pw, email=None):
-        acct = Account()
+        acct = cls()
         acct.uid = uid
         if not email:
             email = None
@@ -61,7 +73,7 @@ class Account(Base):
         home_page_text = 'Welcome to hypertextual. This is your home page.'
         home_page = Page.new(acct, home_page_title)
         home_page.page_name = None
-        home_page.create_draft_rev(home_page_text, True)
+        home_page.save_draft_rev(home_page_text, True)
         home_page.publish_draft_rev()
 
     @classmethod
@@ -71,7 +83,7 @@ class Account(Base):
         private_home_page = Page.new(acct, private_home_page_title)
         private_home_page.page_name = '_private'
         private_home_page.private = True
-        private_home_page.create_draft_rev(private_home_page_text, True)
+        private_home_page.save_draft_rev(private_home_page_text, True)
         private_home_page.publish_draft_rev()
 
     @staticmethod
