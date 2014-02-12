@@ -54,6 +54,10 @@ class Link(Base):
         return a
 
     def __get_link_components(self, current_uid):
+
+        from acct import Account
+        from page import Page
+
         # TODO: set classes for all conditions
 
         title = self.tgt_page_title
@@ -61,9 +65,6 @@ class Link(Base):
         link_uid = self.tgt_page_uid or page_uid
         display_text = self.tgt_page_alias or self.tgt_page_title
         classes = []
-
-        from acct import Account
-        from page import Page
 
         try:
             page = Page.query.join(Account.pages).filter(Page.title==title, Account.uid==link_uid).one()
@@ -83,7 +84,7 @@ class Link(Base):
         return url, display_text, classes
 
     @classmethod
-    def new(cls, rev, link_num, uid, alias, title):
+    def new(cls, rev, link_num, uid, title, alias):
         link = cls()
         link.link_num = link_num
         if uid and uid != rev.page.acct.uid:
