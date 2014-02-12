@@ -39,7 +39,7 @@ class Link(Base):
         url, display_text, classes = self.__get_link_components(current_uid)
         class_html = ''
         if classes:
-            class_text = classes.join(' ')
+            class_text = ' '.join(classes)
             class_html = ' class="%s"' % class_text
         html = '<a href="%s"%s>%s</a>' % (url, class_html, display_text)
         return html
@@ -49,8 +49,9 @@ class Link(Base):
         a = etree.Element('a')
         a.text = display_text
         a.set('href', url)
-        for c in classes:
-            a.set('class', c)
+        if classes:
+            class_text = ' '.join(classes)
+            a.set('class', class_text)
         return a
 
     def __get_link_components(self, current_uid):
@@ -74,7 +75,7 @@ class Link(Base):
                 url = '#'
                 classes.append('link-does-not-exist')
         except NoResultFound:
-            if page_uid == current_uid:
+            if page_uid == current_uid and link_uid == current_uid:
                 url = '/%s?action=create&title=%s' % (current_uid, title)
                 classes.append('link-create-page')
             else:
