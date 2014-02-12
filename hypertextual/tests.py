@@ -201,7 +201,85 @@ class TestPage(AlchemyTestBase):
         self.assertEqual(2, len(self.page.revs))
 
 class TestRevision(AlchemyTestBase):
-    pass
+
+    def setUp(self):
+        self.acct = Account.new('scott', 'tiger', 'scott@gmail.com')
+        self.page = Page.new(self.acct, 'Book List')
+
+    def test_new(self):
+        rev = self.page.save_draft_rev('book list sample text', True)
+        self.page.publish_draft_rev()
+        self.assertIs(rev.page, self.page)
+        self.assertEqual(0, rev.rev_num)
+        self.assertTrue(rev.use_markdown)
+        text = rev.get_text()
+        self.assertEqual('book list sample text', text)
+
+    def test_add_rev(self):
+        self.page.save_draft_rev('book list sample text', True)
+        self.page.publish_draft_rev()
+        rev = self.page.save_draft_rev('book list revised text', True)
+        text = rev.get_text()
+        self.assertEqual('book list revised text', text)
+
+    def test_link_to_self(self):
+        rev = self.page.save_draft_rev('book list sample text [[Home]]', True)
+        raw_text = rev._Revision__get_raw_text_from_patches()
+        self.assertEqual('book list sample text [[0]]', raw_text)
+        text = rev.get_text()
+        self.assertEqual('book list sample text [[Home]]', text)
+        html = rev.render_to_html(self.acct.uid)
+        self.assertEqual('<p>book list sample text <a href="/scott">Home</a></p>', html)
+        rev.use_markdown = False
+        html = rev.render_to_html(self.acct.uid)
+        self.assertEqual('<pre>book list sample text <a href="/scott">Home</a></pre>', html)
+
+    def test_link_to_self_with_alias(self):
+        rev = self.page.save_draft_rev('book list sample text [[Home|Scott Home]]', True)
+        raw_text = rev._Revision__get_raw_text_from_patches()
+        self.assertEqual('book list sample text [[0]]', raw_text)
+        text = rev.get_text()
+        self.assertEqual('book list sample text [[Home|Scott Home]]', text)
+        html = rev.render_to_html(self.acct.uid)
+        self.assertEqual('<p>book list sample text <a href="/scott">Scott Home</a></p>', html)
+        rev.use_markdown = False
+        html = rev.render_to_html(self.acct.uid)
+        self.assertEqual('<pre>book list sample text <a href="/scott">Scott Home</a></pre>', html)
+
+    def test_link_to_other(self):
+        Account.new('sally', 'secret', 'sally@gmail.com')
+        rev = self.page.save_draft_rev('book list sample text [[sally::Home]]', True)
+        raw_text = rev._Revision__get_raw_text_from_patches()
+        self.assertEqual('book list sample text [[0]]', raw_text)
+        text = rev.get_text()
+        self.assertEqual('book list sample text [[sally::Home]]', text)
+        html = rev.render_to_html(self.acct.uid)
+        self.assertEqual('<p>book list sample text <a href="/sally">Home</a></p>', html)
+        rev.use_markdown = False
+        html = rev.render_to_html(self.acct.uid)
+        self.assertEqual('<pre>book list sample text <a href="/sally">Home</a></pre>', html)
+
+    def test_link_to_other_with_alias(self):
+        Account.new('sally', 'secret', 'sally@gmail.com')
+        rev = self.page.save_draft_rev('book list sample text [[sally::Home|Sally Home]]', True)
+        raw_text = rev._Revision__get_raw_text_from_patches()
+        self.assertEqual('book list sample text [[0]]', raw_text)
+        text = rev.get_text()
+        self.assertEqual('book list sample text [[sally::Home|Sally Home]]', text)
+        html = rev.render_to_html(self.acct.uid)
+        self.assertEqual('<p>book list sample text <a href="/sally">Sally Home</a></p>', html)
+        rev.use_markdown = False
+        html = rev.render_to_html(self.acct.uid)
+        self.assertEqual('<pre>book list sample text <a href="/sally">Sally Home</a></pre>', html)
+
+    def test_link_with_markdown(self):
+        rev = self.page.save_draft_rev('book list sample text **[[Home]]**', True)
+        raw_text = rev._Revision__get_raw_text_from_patches()
+        self.assertEqual('book list sample text **[[0]]**', raw_text)
+        text = rev.get_text()
+        self.assertEqual('book list sample text **[[Home]]**', text)
+        html = rev.render_to_html(self.acct.uid)
+        self.assertEqual('<p>book list sample text <strong><a href="/scott">Home</a></strong></p>', html)
 
 class TestLink(AlchemyTestBase):
     pass
@@ -228,11 +306,11 @@ class TestRegex(unittest.TestCase):
         self.assertIsNone(g)
         self.assertIsNotNone(h)
         self.assertIsNone(i)
-        print a.groupdict()
-        print b.groups()
-        print c.groups()
-        print d.groupdict()
-        print h.groups()
+        #print a.groupdict()
+        #print b.groups()
+        #print c.groups()
+        #print d.groupdict()
+        #print h.groups()
 
     def test_placeholder_regex(self):
         regex = HT_PLACEHOLDER_RE
