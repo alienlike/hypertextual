@@ -42,11 +42,15 @@ class Account(Base):
         return page
 
     def get_page_by_title(self, title):
-        page = Page.query.filter(Page.title==title).one()
+        page = Page.query.\
+            filter(Page.title==title).\
+            filter(Page.acct==self).one()
         return page
 
     def get_page_by_name(self, page_name):
-        page = Page.query.filter(Page.page_name==page_name).one()
+        page = Page.query.\
+            filter(Page.page_name==page_name).\
+            filter(Page.acct==self).one()
         return page
 
     @classmethod
