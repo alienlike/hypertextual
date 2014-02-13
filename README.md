@@ -4,23 +4,23 @@
 
 *must haves*
 
-- database-driven page links
-- private pages
-- rename/redirect a page
-- link styles: create/does not exist/redirected/private
+- rename/redirect a page (impacts models)
+- password change/reset (impacts models)
+- delete a page
+- convert urls to hyperlinks
+- try to parse hypertextual urls
 
 *features*
 
-- edit page names and titles
-- delete a page
 - header/footer/menu
-- monospace font in editor
 - preview pane
 - revision index
 - orphaned page index
 
 *styling*
 
+- link styles: create/does not exist/redirected/private
+- monospace font in editor
 - larger edit box
 - always keep header/footer visible
 - responsive layout
@@ -29,12 +29,11 @@
 
 - home/about/faq/tutorial
 - sample content
-- password change/reset
 
 *nice to have*
 
 - ajax-based editing
 - color options
-- unicode compatibility
 - search
+- unicode compatibility
 - collaborative editing
