@@ -47,9 +47,9 @@ class Account(Base):
             filter(Page.acct==self).one()
         return page
 
-    def get_page_by_name(self, page_name):
+    def get_page_by_slug(self, slug):
         page = Page.query.\
-            filter(Page.page_name==page_name).\
+            filter(Page.slug==slug).\
             filter(Page.acct==self).one()
         return page
 
@@ -76,7 +76,7 @@ class Account(Base):
         home_page_title = 'Home'
         home_page_text = 'Welcome to hypertextual. This is your home page.'
         home_page = Page.new(acct, home_page_title)
-        home_page.page_name = None
+        home_page.slug = None
         home_page.save_draft_rev(home_page_text, True)
         home_page.publish_draft_rev()
 
@@ -85,7 +85,7 @@ class Account(Base):
         private_home_page_title = 'Private Home'
         private_home_page_text = 'Welcome to hypertextual. This is your private home page.'
         private_home_page = Page.new(acct, private_home_page_title)
-        private_home_page.page_name = '_private'
+        private_home_page.slug = '_private'
         private_home_page.private = True
         private_home_page.save_draft_rev(private_home_page_text, True)
         private_home_page.publish_draft_rev()

@@ -43,7 +43,7 @@ class TestAccount(AlchemyTestBase):
         self.assertEqual('Home', page.title)
 
     def test_get_page_by_name(self):
-        page = self.acct.get_page_by_name('_private')
+        page = self.acct.get_page_by_slug('_private')
         self.assertIsInstance(page, Page)
         self.assertEqual('Private Home', page.title)
 
@@ -72,7 +72,7 @@ class TestPage(AlchemyTestBase):
 
     def test_new(self):
         self.assertEqual('Book List', self.page.title)
-        self.assertEqual('book-list', self.page.page_name)
+        self.assertEqual('book-list', self.page.slug)
         self.assertIsNone(self.page.curr_rev_num)
         self.assertIsNone(self.page.draft_rev_num)
         self.assertFalse(self.page.private)

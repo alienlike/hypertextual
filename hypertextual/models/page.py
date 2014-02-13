@@ -14,7 +14,7 @@ class Page(Base):
     acct_id = Column(Integer, ForeignKey('acct.id', ondelete='CASCADE'), nullable=False)
     create_ts = Column(DateTime, default=datetime.now)
 
-    page_name = Column(String) # http://hypertextual/<page_name>
+    slug = Column(String) # http://hypertextual/<slug>
     title = Column(String)
     curr_rev_num = Column(Integer)
     draft_rev_num = Column(Integer)
@@ -46,9 +46,9 @@ class Page(Base):
     def get_url(self, rev_num=None):
         # start with uid
         url = '/%s' % self.acct.uid
-        if self.page_name is not None:
+        if self.slug is not None:
             # add page name if required
-            url += '/%s' % self.page_name
+            url += '/%s' % self.slug
         if rev_num is not None and rev_num != self.curr_rev_num:
             # add rev num if required
             url += '?rev=%s' % rev_num
@@ -87,48 +87,46 @@ class Page(Base):
     @classmethod
     def new(cls, acct, title):
         page = cls()
+        page.title = title
+        page.slug = cls.__sluggify(acct, title)
         acct.pages.append(page)
-        cls.__set_title(page, title)
         db_session.add(page)
         return page
 
     @classmethod
-    def __set_title(cls, page, title):
-
-        # set title
-        page.title = title
+    def __sluggify(cls, acct, title):
 
         # build a page name from the valid characters in the page name,
         # removing any single quotes and substituting dashes for everything else
         valid_chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-        page_name = ''
+        slug = ''
         for char in title.lower():
             if char in valid_chars:
-                page_name += char
+                slug += char
             elif char == "'":
                 continue
-            elif not page_name.endswith('-'):
-                page_name += "-"
-        page_name = page_name.strip('-')
+            elif not slug.endswith('-'):
+                slug += "-"
+        slug = slug.strip('-')
 
         # limit to 100 chars
-        page_name = page_name[:100].strip('-')
+        slug = slug[:100].strip('-')
 
         # prepend underscore to numeric name
         try:
-            page_name = '_%s' % int(page_name)
+            slug = '_%s' % int(slug)
         except ValueError:
             pass
 
         # ensure uniqueness of name
-        exists = lambda name: Page.query.\
-            filter(Page.page_name==name).\
-            filter(Page.acct==page.acct).count()
-        name_to_test = page_name
+        exists = lambda s: Page.query.\
+            filter(Page.slug==s).\
+            filter(Page.acct==acct).count()
+        slug_to_test = slug
         i = 1
-        while exists(name_to_test):
+        while exists(slug_to_test):
             i+=1
-            name_to_test = '%s-%s' % (page_name, i)
+            slug_to_test = '%s-%s' % (slug, i)
+        slug = slug_to_test
 
-        # set page name
-        page.page_name = name_to_test
+        return slug

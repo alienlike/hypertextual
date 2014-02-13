@@ -258,7 +258,7 @@ def user_home(uid):
             filter(Page.title==title).\
             filter(Page.acct==acct).first()
         if page:
-            url = url_for('user_page', uid=acct.uid, page_name=page.page_name)
+            url = url_for('user_page', uid=acct.uid, slug=page.slug)
             return redirect(url)
 
         # determine which renderer or handler to call
@@ -270,8 +270,8 @@ def user_home(uid):
     else:
         return user_page(uid, None)
 
-@app.route('/<uid>/<page_name>/', methods=['POST', 'GET'])
-def user_page(uid, page_name):
+@app.route('/<uid>/<slug>/', methods=['POST', 'GET'])
+def user_page(uid, slug):
 
     # get account by uid; abort if not found
     try:
@@ -279,10 +279,10 @@ def user_page(uid, page_name):
     except NoResultFound:
         abort(404)
 
-    # get page by page_name; abort if not found
+    # get page by slug; abort if not found
     try:
         page = Page.query.\
-            filter(Page.page_name==page_name).\
+            filter(Page.slug==slug).\
             filter(Page.acct==acct).one()
     except NoResultFound:
         abort(404)
@@ -296,10 +296,10 @@ def user_page(uid, page_name):
 
     # ignore any action by unauthorized user
     if action and not page.user_is_owner(g.current_user):
-        if page_name is None:
+        if slug is None:
             url = url_for('user_home', uid=uid)
         else:
-            url = url_for('user_page', uid=uid, page_name=page_name)
+            url = url_for('user_page', uid=uid, slug=slug)
         return redirect(url)
 
     # determine which renderer or handler to call
@@ -327,10 +327,10 @@ def render_page_view(page, rev_num=None):
     if rev_num is None:
         rev_num = page.curr_rev_num
     elif rev_num < 0 or rev_num > page.curr_rev_num:
-        if page.page_name is None:
+        if page.slug is None:
             url = url_for('user_home', uid=page.acct.uid)
         else:
-            url = url_for('user_page', uid=page.acct.uid, page_name=page.page_name)
+            url = url_for('user_page', uid=page.acct.uid, slug=page.slug)
         return redirect(url)
 
     # get the revision and render it as html for display
@@ -396,7 +396,7 @@ def handle_page_create(acct, title):
         g.current_user.pages.append(page)
 
         # redirect to view page
-        url = url_for('user_page', uid=acct.uid, page_name=page.page_name)
+        url = url_for('user_page', uid=acct.uid, slug=page.slug)
         return redirect(url)
 
 def render_page_edit(page):
@@ -417,7 +417,7 @@ def handle_page_edit(page):
     # get form values
     text = request.form['text']
     use_markdown = request.form['use_markdown'] == 'True'
-    private = request.form.has_key('private') or page.page_name == '_private'
+    private = request.form.has_key('private') or page.slug == '_private'
 
     # get button clicks
     publish = request.form.has_key('publish')
@@ -431,10 +431,10 @@ def handle_page_edit(page):
                 filter(Revision.rev_num==page.draft_rev_num).\
                 filter(Revision.page==page).delete()
             page.draft_rev_num = None
-        if page.page_name is None:
+        if page.slug is None:
             url = url_for('user_home', uid=page.acct.uid)
         else:
-            url = url_for('user_page', uid=page.acct.uid, page_name=page.page_name)
+            url = url_for('user_page', uid=page.acct.uid, slug=page.slug)
         return redirect(url)
 
     elif save_draft or publish:
@@ -452,10 +452,10 @@ def handle_page_edit(page):
             page.publish_draft_rev()
 
         # redirect to view page
-        if page.page_name is None:
+        if page.slug is None:
             url = url_for('user_home', uid=page.acct.uid)
         else:
-            url = url_for('user_page', uid=page.acct.uid, page_name=page.page_name)
+            url = url_for('user_page', uid=page.acct.uid, slug=page.slug)
         return redirect(url)
 
 def render_template(template_name, **vals):
