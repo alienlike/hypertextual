@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from db import Base, db_session
 from rev import Revision
+from link import Link
 
 class Page(Base):
 
@@ -97,7 +98,7 @@ class Page(Base):
         return page
 
     @classmethod
-    def move(cls, page, new_title, create_redirect=False):
+    def move(cls, page, new_title, create_redirect=False, update_links=False):
         if new_title != page.title:
             old_title = page.title
             old_slug = page.slug
@@ -111,6 +112,36 @@ class Page(Base):
                 redirected_page.save_draft_rev(text, use_markdown=True)
                 redirected_page.publish_draft_rev()
                 redirected_page.redirect = True
+            if update_links:
+                db_session.flush()
+                sql = """
+                UPDATE link x
+                SET tgt_page_title = '%s'
+                WHERE EXISTS (
+                    SELECT 1 FROM link ln
+                    INNER JOIN rev r
+                        ON r.id = ln.rev_id
+                    INNER JOIN page p
+                        ON p.id = r.page_id
+                        AND p.acct_id = %s
+                    WHERE ln.id = x.id
+                    AND ln.tgt_page_uid IS NULL
+                    AND ln.tgt_page_title = '%s'
+                );
+                """ % (
+                    new_title.replace("'","''"),
+                    page.acct_id,
+                    old_title.replace("'","''")
+                    )
+                db_session.execute(sql)
+                db_session.refresh(page.acct)
+                #Link.query.\
+                #    join(Revision).\
+                #    join(Page).\
+                #    filter(Page.acct==page.acct).\
+                #    filter(Link.tgt_page_uid==None).\
+                #    filter(Link.tgt_page_title==old_title).\
+                #    update({Link.tgt_page_title: new_title})
 
     @classmethod
     def delete(cls, page):

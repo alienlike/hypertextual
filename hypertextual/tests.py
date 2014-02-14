@@ -217,6 +217,22 @@ class TestPage(AlchemyTestBase):
         moved_text = moved_page.get_curr_rev().get_text()
         self.assertEqual('book list sample text', moved_text)
 
+    def test_move_with_update_links(self):
+        self.page.save_draft_rev('book list sample text', True)
+        self.page.publish_draft_rev()
+        home_page = self.acct.get_page_by_title('Home')
+        home_page.save_draft_rev('this is my [[Book List]]', True)
+        home_page.publish_draft_rev()
+        Page.move(self.page, 'Reading List', False, True)
+        moved_page = self.acct.get_page_by_title('Reading List')
+        self.assertFalse(moved_page.redirect)
+        self.assertEqual('Reading List', moved_page.title)
+        self.assertEqual('reading-list', moved_page.slug)
+        moved_text = moved_page.get_curr_rev().get_text()
+        self.assertEqual('book list sample text', moved_text)
+        home_text = home_page.get_curr_rev().get_text()
+        self.assertEqual('this is my [[Reading List]]', home_text)
+
     def test_delete(self):
         db_session.flush()
         Page.delete(self.page)
