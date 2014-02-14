@@ -4,14 +4,23 @@
 
 *must haves*
 
-- rename/redirect a page (impacts models)
-- password change/reset (impacts models)
-- delete a page
-- convert urls to hyperlinks
-- try to parse hypertextual urls
+- change /username/_private to /~username
+- expose all new features at front-end
+
+*refactorings*
+
+- move queries from views to models
+- specify varchar lengths
+- use text type for patches
+- improve slug generator
+- get relative imports working
 
 *features*
 
+- improve naming constraints
+- convert urls to hyperlinks
+- try to parse hypertextual urls
+- option to update links on page move
 - header/footer/menu
 - preview pane
 - revision index
@@ -27,13 +36,15 @@
 
 *public site*
 
+- password change/reset
 - home/about/faq/tutorial
 - sample content
 
 *nice to have*
 
+- export/import
+- full-text search
 - ajax-based editing
 - color options
-- search
 - unicode compatibility
 - collaborative editing
