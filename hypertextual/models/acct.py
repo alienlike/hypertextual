@@ -44,13 +44,13 @@ class Account(Base):
     def get_page_by_title(self, title):
         page = Page.query.\
             filter(Page.title==title).\
-            filter(Page.acct==self).one()
+            filter(Page.acct==self).first()
         return page
 
     def get_page_by_slug(self, slug):
         page = Page.query.\
             filter(Page.slug==slug).\
-            filter(Page.acct==self).one()
+            filter(Page.acct==self).first()
         return page
 
     @classmethod
