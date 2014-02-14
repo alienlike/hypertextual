@@ -200,6 +200,30 @@ class TestPage(AlchemyTestBase):
         self.assertIsNotNone(self.page.curr_rev_num)
         self.assertEqual(2, len(self.page.revs))
 
+    def test_move_with_redirect(self):
+        self.page.save_draft_rev('book list sample text', True)
+        self.page.publish_draft_rev()
+        Page.move(self.page, 'Reading List', True)
+        redirect_page = self.acct.get_page_by_title('Book List')
+        moved_page = self.acct.get_page_by_title('Reading List')
+        self.assertTrue(redirect_page.redirect)
+        self.assertEqual('Book List', redirect_page.title)
+        self.assertEqual('book-list', redirect_page.slug)
+        redirect_text = redirect_page.get_curr_rev().get_text()
+        self.assertEqual('This page has moved to: [[Reading List]]', redirect_text)
+        self.assertFalse(moved_page.redirect)
+        self.assertEqual('Reading List', moved_page.title)
+        self.assertEqual('reading-list', moved_page.slug)
+        moved_text = moved_page.get_curr_rev().get_text()
+        self.assertEqual('book list sample text', moved_text)
+
+    def test_delete(self):
+        db_session.flush()
+        Page.delete(self.page)
+        page = self.acct.get_page_by_title('Book List')
+        self.assertIsNone(page)
+        self.assertEqual(2, len(self.acct.pages))
+
 class TestRevision(AlchemyTestBase):
 
     def setUp(self):
@@ -304,6 +328,20 @@ class TestLink(AlchemyTestBase):
     def test_link_to_self(self):
         rev = self.scott_rev
         link = Link.new(rev, 0, None, 'Book List', None)
+        link_text = link.get_link_text()
+        ph_text = link.get_placeholder_text()
+        link_html = link.get_link_html('scott')
+        md_elem = link.get_link_markdown_elem('scott')
+        self.assertEqual('[[Book List]]', link_text)
+        self.assertEqual('[[0]]', ph_text)
+        self.assertEqual('<a href="/scott/book-list">Book List</a>', link_html)
+        self.assertEqual('Book List', md_elem.text)
+        self.assertEqual('/scott/book-list', md_elem.get('href'))
+        self.assertIsNone(md_elem.get('class'))
+
+    def test_link_to_self_with_explicit_username(self):
+        rev = self.scott_rev
+        link = Link.new(rev, 0, 'scott', 'Book List', None)
         link_text = link.get_link_text()
         ph_text = link.get_placeholder_text()
         link_html = link.get_link_html('scott')

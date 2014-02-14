@@ -19,6 +19,7 @@ class Page(Base):
     curr_rev_num = Column(Integer)
     draft_rev_num = Column(Integer)
     private = Column(Boolean)
+    redirect = Column(Boolean)
 
     # relationships
     revs = relationship(Revision, order_by='Revision.id', backref='page', primaryjoin='Page.id==Revision.page_id')
@@ -28,6 +29,7 @@ class Page(Base):
         self.curr_rev_num = None
         self.draft_rev_num = None
         self.private = False
+        self.redirect = False
 
     def user_is_owner(self, acct_or_uid):
         try:
@@ -83,6 +85,7 @@ class Page(Base):
     def publish_draft_rev(self):
         self.curr_rev_num = self.draft_rev_num
         self.draft_rev_num = None
+        self.redirect = False
 
     @classmethod
     def new(cls, acct, title):
@@ -92,6 +95,27 @@ class Page(Base):
         acct.pages.append(page)
         db_session.add(page)
         return page
+
+    @classmethod
+    def move(cls, page, new_title, create_redirect=False):
+        if new_title != page.title:
+            old_title = page.title
+            old_slug = page.slug
+            page.title = new_title
+            page.slug = cls.__sluggify(page.acct, new_title)
+            if create_redirect:
+                redirected_page = cls.new(page.acct, old_title)
+                redirected_page.slug = old_slug
+                redirected_page.private = page.private
+                text = 'This page has moved to: [[%s]]' % new_title
+                redirected_page.save_draft_rev(text, use_markdown=True)
+                redirected_page.publish_draft_rev()
+                redirected_page.redirect = True
+
+    @classmethod
+    def delete(cls, page):
+        page.acct = None
+        db_session.delete(page)
 
     @classmethod
     def __sluggify(cls, acct, title):
