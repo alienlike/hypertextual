@@ -9,6 +9,7 @@
 
 *refactorings*
 
+- cache current / draft text
 - move queries from views to models
 - specify varchar lengths
 - use text type for patches
