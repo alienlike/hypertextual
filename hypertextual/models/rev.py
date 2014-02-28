@@ -8,8 +8,6 @@ from db import Base, db_session
 from md import HypertextualLinkExtension, HT_LINK_RE, HT_PLACEHOLDER_RE
 from link import Link
 
-# TODO: do some caching of current / draft text
-
 class Revision(Base):
 
     # table

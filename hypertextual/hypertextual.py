@@ -441,12 +441,6 @@ def handle_page_edit(page):
 
         # persist
         page.private = private
-        if page.draft_rev_num is not None:
-            # delete any previous draft
-            Revision.query.\
-                filter(Revision.rev_num==page.draft_rev_num).\
-                filter(Revision.page==page).delete()
-            page.draft_rev_num = None
         page.save_draft_rev(text, use_markdown)
         if publish:
             page.publish_draft_rev()
