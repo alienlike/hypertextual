@@ -1,51 +1,7 @@
-##hypertextual: versioned hypertext
+##Hypertextual
 
-**backlog:**
+Hypertextual is a simple hypertext platform. It uses [Markdown](http://daringfireball.net/projects/markdown/) for formatting, and wiki-like links for getting around. All pages are versioned, and every user has both a public and a private home page. This allows Hypertextual to serve as a free-form web presence, as well as a private repository for notes, lists, and documents.
 
-*must haves*
+The app is written in [Python](http://www.python.org/), using the [Flask](http://flask.pocoo.org/) web framework with [Chameleon](http://chameleon.readthedocs.org/en/latest/) page templates. Data is stored in [PostgreSQL](http://www.postgresql.org/), with [SQLAlchemy](http://www.sqlalchemy.org/) to handle the object-relational mappings. The [google-diff-match-patch](http://code.google.com/p/google-diff-match-patch/) library is used to generate patches for versioning. All passwords are hashed with [bcrypt](http://bcrypt.sourceforge.net/) because that is the right thing to do.
 
-- change /username/_private to /~username
-- expose all new features at front-end
-
-*refactorings*
-
-- cache current / draft text
-- move queries from views to models
-- specify varchar lengths
-- use text type for patches
-- improve slug generator
-- get relative imports working
-
-*features*
-
-- improve naming constraints
-- convert urls to hyperlinks
-- try to parse hypertextual urls
-- option to update links on page move
-- header/footer/menu
-- preview pane
-- revision index
-- orphaned page index
-
-*styling*
-
-- link styles: create/does not exist/redirected/private
-- monospace font in editor
-- larger edit box
-- always keep header/footer visible
-- responsive layout
-
-*public site*
-
-- password change/reset
-- home/about/faq/tutorial
-- sample content
-
-*nice to have*
-
-- export/import
-- full-text search
-- ajax-based editing
-- color options
-- unicode compatibility
-- collaborative editing
+A functional prototype is still under development. You can see the backlog on the [Issues](https://github.com/alienlike/hypertextual/issues) page.
