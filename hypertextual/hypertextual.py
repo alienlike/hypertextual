@@ -4,6 +4,7 @@ from chameleon import PageTemplateLoader
 from sqlalchemy import create_engine
 from models import db_session, Page, Account
 from validate_email import validate_email
+from models import reserved_acct_names
 
 app = Flask(__name__)
 site_url = None
@@ -11,41 +12,41 @@ app_path = None
 templates = None
 
 def main():
-    configure_flask_app()
-    configure_db_session()
-    set_globals()
-    command_line_args = get_command_line_args()
-    app_options = get_app_options(command_line_args)
+    _configure_flask_app()
+    _configure_db_session()
+    _set_globals()
+    command_line_args = _get_command_line_args()
+    app_options = _get_app_options(command_line_args)
     app.run(**app_options)
 
-def configure_flask_app():
+def _configure_flask_app():
     app.config.from_object('config')
 
-def configure_db_session():
+def _configure_db_session():
     conn_str = app.config['CONN_STR']
     engine = create_engine(conn_str)
     db_session.configure(bind=engine)
 
-def set_globals():
+def _set_globals():
     global site_url, app_path, templates
-    site_url = get_site_url()
-    app_path = get_app_path()
-    templates = get_chameleon_templates()
+    site_url = _get_site_url()
+    app_path = _get_app_path()
+    templates = _get_chameleon_templates()
 
-def get_site_url():
+def _get_site_url():
     site_url = app.config['SITE_URL']
     return site_url
 
-def get_app_path():
+def _get_app_path():
     app_path = os.path.dirname(os.path.abspath(__file__))
     return app_path
 
-def get_chameleon_templates():
+def _get_chameleon_templates():
     template_path = os.path.join(app_path, 'templates')
     template_loader = PageTemplateLoader(template_path)
     return template_loader
 
-def get_command_line_args():
+def _get_command_line_args():
     # set up some args for enabling debug or reload mode
     p = argparse.ArgumentParser()
     p.add_argument('-d', action='store_true', dest='debug_mode', default=False)
@@ -53,7 +54,7 @@ def get_command_line_args():
     command_line_args = p.parse_args()
     return command_line_args
 
-def get_app_options(command_line_args):
+def _get_app_options(command_line_args):
     app_options = {
         'port': app.config['PORT'],
         'host': '0.0.0.0',
@@ -62,10 +63,10 @@ def get_app_options(command_line_args):
         'use_reloader': command_line_args.reload_mode # reload files on change
     }
     if command_line_args.reload_mode:
-        app_options['extra_files'] = get_static_files_for_reload_mode()
+        app_options['extra_files'] = _get_static_files_for_reload_mode()
     return app_options
 
-def get_static_files_for_reload_mode():
+def _get_static_files_for_reload_mode():
     static_dirs = ['%s/static' % app_path, '%s/templates' % app_path]
     static_files = static_dirs[:]
     for static_dir in static_dirs:
@@ -78,9 +79,9 @@ def get_static_files_for_reload_mode():
 
 @app.before_request
 def before_request():
-    g.current_user = get_current_user_from_session()
+    g.current_user = _get_current_user_from_session()
 
-def get_current_user_from_session():
+def _get_current_user_from_session():
     # retrieve current_user from session, where it is kept between requests
     current_user = session.get('current_user', None)
     if current_user:
@@ -110,6 +111,27 @@ def page_not_found(e):
         'site_url': site_url
     }
     return render_template('404.html', **vals), 404
+
+# Routes:
+# /                         --> site home page
+# /robots.txt
+# /favicon.ico
+# /sitemap.xml
+# /dublin.rdf
+# /opensearch.xml
+# /site/...                 --> site page
+# /site/admin/...           --> admin page
+# /site/docs/...            --> documentation page
+# /api/...                  --> api handler
+# /static/...               --> static file
+# /<uid>                    --> user home page
+# /~<uid>                   --> user private home page
+# /<uid>/file/...           --> user file (e.g., images)
+# /<uid>/account/...        --> account page
+# /<uid>/<slug>             --> user page
+# /<uid>/action/...         --> home page action
+# /~<uid>/action/...        --> private home page action
+# /<uid>/<slug>/action/...  --> page action
 
 @app.route('/')
 def site_home():
@@ -186,8 +208,7 @@ def create_acct():
         uid_exists = Account.uid_exists(uid)
         email_exists = email and Account.email_exists(email)
 
-        reserved_names = ['site','account','docs','doc','help','admin','administrator',
-                          'edit','create','api','rss','json','xml','html','css','js']
+        reserved_names = reserved_acct_names + app.config['RESERVED_ACCT_NAMES']
         uid_re = r'^([a-zA-Z][a-zA-Z0-9]*)$'
 
         if not uid:
@@ -236,6 +257,36 @@ def create_acct():
         'errors': errors
     }
     return render_template('create_acct.html', **vals)
+
+@app.route('/<uid>/account/reset-password/', methods=['POST', 'GET'])
+def reset_password(uid): pass
+
+#@app.route('/<uid>/')
+def view_home(uid): pass
+
+@app.route('/~<uid>/')
+def view_private_home(uid): pass
+
+@app.route('/<uid>/action/create/', methods=['POST', 'GET'])
+def create_page(uid): pass
+
+@app.route('/~<uid>/action/create/', methods=['POST', 'GET'])
+def create_private_page(uid): pass
+
+@app.route('/<uid>/action/edit/', methods=['POST', 'GET'])
+def edit_home(uid): pass
+
+@app.route('/~<uid>/action/edit/', methods=['POST', 'GET'])
+def edit_private_home(uid): pass
+
+@app.route('/<uid>/<slug>/action/edit/', methods=['POST', 'GET'])
+def edit_page(uid, slug): pass
+
+@app.route('/<uid>/<slug>/action/move/', methods=['POST', 'GET'])
+def move_page(uid, slug): pass
+
+@app.route('/<uid>/<slug>/action/delete/', methods=['POST', 'GET'])
+def delete_page(uid, slug): pass
 
 @app.route('/<uid>/', methods=['POST', 'GET'])
 def user_home(uid):
@@ -447,6 +498,26 @@ def handle_page_edit(page):
         else:
             url = url_for('user_page', uid=page.acct.uid, slug=page.slug)
         return redirect(url)
+
+@app.route('/robots.txt/')
+def robots_txt():
+    abort(404)
+
+@app.route('/favicon.ico/')
+def favicon_ico():
+    abort(404)
+
+@app.route('/sitemap.xml/')
+def sitemap_xml():
+    abort(404)
+
+@app.route('/dublin.rdf/')
+def dublin_rdf():
+    abort(404)
+
+@app.route('/opensearch.xml/')
+def opensearch_xml():
+    abort(404)
 
 def render_template(template_name, **vals):
     template = templates[template_name]

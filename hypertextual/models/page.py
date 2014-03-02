@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from db import Base, db_session
 from rev import Revision
+from reserved import reserved_page_names
 
 class Page(Base):
 
@@ -150,14 +151,14 @@ class Page(Base):
             pass
 
         # ensure uniqueness of name
-        exists = lambda s: Page.query.\
+        exists = lambda s: s in reserved_page_names or Page.query.\
             filter(Page.slug==s).\
-            filter(Page.acct==acct).count()
+            filter(Page.acct==acct).count() > 1
         slug_to_test = slug
         i = 1
         while exists(slug_to_test):
-            i+=1
             slug_to_test = '%s-%s' % (slug, i)
+            i+=1
         slug = slug_to_test
 
         return slug

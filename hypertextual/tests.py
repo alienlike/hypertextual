@@ -104,6 +104,11 @@ class TestPage(AlchemyTestBase):
         self.assertIs(self.page.acct, self.acct)
         self.assertEqual(0, len(self.page.revs))
 
+    def test_new_reserved_name(self):
+        page = Page.new(self.acct, 'Action')
+        self.assertEqual('Action', page.title)
+        self.assertEqual('action-1', page.slug)
+
     def test_user_is_owner(self):
         acct2 = Account.new('sally', 'secret', 'sally@gmail.com')
         self.assertTrue(
