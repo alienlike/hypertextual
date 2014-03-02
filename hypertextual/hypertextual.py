@@ -2,8 +2,7 @@ import os, re, argparse
 from flask import Flask, request, session, g, redirect, url_for, abort
 from chameleon import PageTemplateLoader
 from sqlalchemy import create_engine
-from sqlalchemy.orm.exc import NoResultFound
-from models import db_session, Page, Account, Revision
+from models import db_session, Page, Account
 from validate_email import validate_email
 
 app = Flask(__name__)
@@ -92,7 +91,11 @@ def get_current_user_from_session():
 
 @app.teardown_request
 def teardown_request(exception=None):
-    db_session.commit()
+    try:
+        db_session.commit()
+    except:
+        db_session.rollback()
+        raise
 
 @app.teardown_appcontext
 def teardown_appcontext(exception=None):
@@ -131,8 +134,8 @@ def login():
     if request.method == 'POST':
         # check that uid exists
         uid = request.form['uid'].strip().lower()
-        acct = Account.query.filter(Account.uid==uid).first()
-        if acct is not None:
+        acct = Account.get_by_uid(uid)
+        if acct:
             # validate password
             pw = request.form['pw']
             valid = acct.validate_password(pw)
@@ -180,8 +183,8 @@ def create_acct():
         valid = True
 
         # check whether uid or email already exist
-        uid_exists = Account.query.filter(Account.uid==uid).first() is not None
-        email_exists = email and Account.query.filter(Account.email==email).first() is not None
+        uid_exists = Account.uid_exists(uid)
+        email_exists = email and Account.email_exists(email)
 
         reserved_names = ['site','account','docs','doc','help','admin','administrator',
                           'edit','create','api','rss','json','xml','html','css','js']
@@ -213,8 +216,9 @@ def create_acct():
 
             # create account
             acct = Account.new(uid, pw, email)
+            db_session.commit() # or weird stuff will happen
 
-            # add account to session
+            # add account to session (effectively log the new user in)
             session['current_user'] = acct
             g.current_user = acct
 
@@ -247,16 +251,13 @@ def user_home(uid):
             return redirect(url)
 
         # get account by uid; abort if not found
-        try:
-            acct = Account.query.filter(Account.uid==uid).one()
-        except NoResultFound:
+        acct = Account.get_by_uid(uid)
+        if acct is None:
             abort(404)
 
         # redirect to the page if the title exists
         title = request.args.get('title', '').strip()
-        page = Page.query.\
-            filter(Page.title==title).\
-            filter(Page.acct==acct).first()
+        page = acct.get_page_by_title(title)
         if page:
             url = url_for('user_page', uid=acct.uid, slug=page.slug)
             return redirect(url)
@@ -274,17 +275,13 @@ def user_home(uid):
 def user_page(uid, slug):
 
     # get account by uid; abort if not found
-    try:
-        acct = Account.query.filter(Account.uid==uid).one()
-    except NoResultFound:
+    acct = Account.get_by_uid(uid)
+    if acct is None:
         abort(404)
 
     # get page by slug; abort if not found
-    try:
-        page = Page.query.\
-            filter(Page.slug==slug).\
-            filter(Page.acct==acct).one()
-    except NoResultFound:
+    page = acct.get_page_by_slug(slug)
+    if page is None:
         abort(404)
 
     # check user access
@@ -336,8 +333,11 @@ def render_page_view(page, rev_num=None):
     # get the revision and render it as html for display
     page_html = ''
     if rev_num is not None:
+        current_uid = None
+        if g.current_user:
+            current_uid = g.current_user.uid
         rev = page.revs[rev_num]
-        page_html = rev.render_to_html(g.current_user.uid)
+        page_html = rev.render_to_html(current_uid)
 
     # return the rendered page template
     vals = {
@@ -393,7 +393,6 @@ def handle_page_create(acct, title):
         # persist
         if publish:
             page.publish_draft_rev()
-        g.current_user.pages.append(page)
 
         # redirect to view page
         url = url_for('user_page', uid=acct.uid, slug=page.slug)
@@ -427,10 +426,7 @@ def handle_page_edit(page):
 
     if revert or cancel:
         if revert:
-            Revision.query.\
-                filter(Revision.rev_num==page.draft_rev_num).\
-                filter(Revision.page==page).delete()
-            page.draft_rev_num = None
+            page.revert_draft_rev()
         if page.slug is None:
             url = url_for('user_home', uid=page.acct.uid)
         else:

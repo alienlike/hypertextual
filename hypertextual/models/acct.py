@@ -2,6 +2,7 @@ from flaskext.bcrypt import generate_password_hash, check_password_hash
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import exists
 from db import Base, db_session
 from page import Page
 
@@ -52,6 +53,30 @@ class Account(Base):
             filter(Page.slug==slug).\
             filter(Page.acct==self).first()
         return page
+
+    @classmethod
+    def get_by_uid(cls, uid):
+        acct = cls.query.filter(cls.uid==uid).first()
+        return acct
+
+    @classmethod
+    def get_all(cls):
+        accts = cls.query.order_by(cls.uid).all()
+        return accts
+
+    @classmethod
+    def uid_exists(cls, uid):
+        ex = db_session.query(
+            exists().where(cls.uid==uid)
+        ).scalar()
+        return ex
+
+    @classmethod
+    def email_exists(cls, email):
+        ex = db_session.query(
+            exists().where(cls.email==email)
+        ).scalar()
+        return ex
 
     @classmethod
     def new(cls, uid, pw, email=None):

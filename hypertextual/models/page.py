@@ -82,6 +82,13 @@ class Page(Base):
         self.draft_rev_num = rev.rev_num
         return rev
 
+    def revert_draft_rev(self):
+        rev = self.get_draft_rev()
+        if rev:
+            rev.page = None
+            db_session.delete(rev)
+            self.draft_rev_num = None
+
     def publish_draft_rev(self):
         self.curr_rev_num = self.draft_rev_num
         self.draft_rev_num = None

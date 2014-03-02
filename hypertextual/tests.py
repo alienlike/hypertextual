@@ -26,6 +26,31 @@ class TestAccount(AlchemyTestBase):
     def setUp(self):
         self.acct = Account.new('scott', 'tiger', 'scott@gmail.com')
 
+    def test_get_by_uid(self):
+        acct = Account.get_by_uid('scott')
+        self.assertIsInstance(acct, Account)
+        self.assertEqual('scott', acct.uid)
+        self.assertIs(acct, self.acct)
+
+    def test_get_all(self):
+        Account.new('sally', 'secret', 'sally@gmail.com')
+        all_accts = Account.get_all()
+        self.assertEqual(2, len(all_accts))
+        self.assertIsInstance(all_accts[0], Account)
+        self.assertIsInstance(all_accts[1], Account)
+
+    def test_uid_exists(self):
+        scott_exists = Account.uid_exists('scott')
+        sally_exists = Account.uid_exists('sally')
+        self.assertTrue(scott_exists)
+        self.assertFalse(sally_exists)
+
+    def test_email_exists(self):
+        scott_exists = Account.email_exists('scott@gmail.com')
+        sally_exists = Account.email_exists('sally@gmail.com')
+        self.assertTrue(scott_exists)
+        self.assertFalse(sally_exists)
+
     def test_new(self):
         self.assertIsInstance(self.acct, Account)
         self.assertEqual('scott', self.acct.uid)
@@ -191,6 +216,13 @@ class TestPage(AlchemyTestBase):
         self.assertIsNone(self.page.draft_rev_num)
         self.assertIsNotNone(self.page.curr_rev_num)
         self.assertEqual(1, len(self.page.revs))
+
+    def test_revert_draft_rev(self):
+        self.page.save_draft_rev('book list sample text', True)
+        self.page.revert_draft_rev()
+        self.assertIsNone(self.page.draft_rev_num)
+        self.assertIsNone(self.page.curr_rev_num)
+        self.assertEqual(0, len(self.page.revs))
 
     def test_save_draft_rev_revised(self):
         self.page.save_draft_rev('book list sample text', True)
