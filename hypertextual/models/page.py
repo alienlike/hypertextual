@@ -47,11 +47,12 @@ class Page(Base):
         return allow
 
     def get_url(self, rev_num=None):
-        # start with uid
-        url = '/%s' % self.acct.uid
-        if self.slug is not None:
-            # add page name if required
-            url += '/%s' % self.slug
+        if self.slug == '__home':
+            url = '/%s' % self.acct.uid
+        elif self.slug == '__private':
+            url = '/~%s' % self.acct.uid
+        else:
+            url = '/%s/%s' % (self.acct.uid, self.slug)
         if rev_num is not None and rev_num != self.curr_rev_num:
             # add rev num if required
             url += '?rev=%s' % rev_num

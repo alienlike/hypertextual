@@ -16,7 +16,7 @@
                     <button type="submit" name="cancel">Cancel</button>
                 </span>
                 <span style="float: right;">
-                    <input type="checkbox" id="private" name="private" tal:attributes="checked page.private; disabled page.slug is None or page.slug == '_private'"><label for="private">Private</label>
+                    <input type="checkbox" id="private" name="private" tal:attributes="checked page.private; disabled page.slug in ['__home', '__private']"><label for="private">Private</label>
                     <input type="radio" id="markdown" name="use_markdown" value="True" tal:attributes="checked rev.use_markdown"><label for="markdown">Markdown</label>
                     <input type="radio" id="plaintext" name="use_markdown" value="False" tal:attributes="checked not rev.use_markdown"><label for="plaintext">Plain text</label>
                 </span>

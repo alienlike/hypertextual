@@ -68,7 +68,7 @@ class TestAccount(AlchemyTestBase):
         self.assertEqual('Home', page.title)
 
     def test_get_page_by_name(self):
-        page = self.acct.get_page_by_slug('_private')
+        page = self.acct.get_page_by_slug('__private')
         self.assertIsInstance(page, Page)
         self.assertEqual('Private Home', page.title)
 
@@ -428,9 +428,9 @@ class TestLink(AlchemyTestBase):
         md_elem = link.get_link_markdown_elem('scott')
         self.assertEqual('[[Record Collection]]', link_text)
         self.assertEqual('[[0]]', ph_text)
-        self.assertEqual('<a href="/scott?action=create&title=Record Collection" class="link-create-page">Record Collection</a>', link_html)
+        self.assertEqual('<a href="/scott/action/create?title=Record Collection" class="link-create-page">Record Collection</a>', link_html)
         self.assertEqual('Record Collection', md_elem.text)
-        self.assertEqual('/scott?action=create&title=Record Collection', md_elem.get('href'))
+        self.assertEqual('/scott/action/create?title=Record Collection', md_elem.get('href'))
         self.assertEqual('link-create-page', md_elem.get('class'))
 
     def test_link_to_other(self):

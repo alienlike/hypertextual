@@ -101,7 +101,7 @@ class Account(Base):
         home_page_title = 'Home'
         home_page_text = 'Welcome to hypertextual. This is your home page.'
         home_page = Page.new(acct, home_page_title)
-        home_page.slug = None
+        home_page.slug = '__home'
         home_page.save_draft_rev(home_page_text, True)
         home_page.publish_draft_rev()
 
@@ -110,7 +110,7 @@ class Account(Base):
         private_home_page_title = 'Private Home'
         private_home_page_text = 'Welcome to hypertextual. This is your private home page.'
         private_home_page = Page.new(acct, private_home_page_title)
-        private_home_page.slug = '_private'
+        private_home_page.slug = '__private'
         private_home_page.private = True
         private_home_page.save_draft_rev(private_home_page_text, True)
         private_home_page.publish_draft_rev()
