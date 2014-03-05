@@ -187,13 +187,6 @@ def create_page(uid):
     elif request.method == 'POST':
         return handle_page_create(acct, title)
 
-@app.route('/<uid>/__home/')
-@app.route('/<uid>/__private/')
-def invalid_slug_access(uid):
-    # __home and __private are special-purpose slugs
-    # and should not be accessible directly
-    abort(404)
-
 @app.route('/<uid>/', defaults={'slug': '__home'})
 @app.route('/~<uid>/', defaults={'slug': '__private'})
 @app.route('/<uid>/<slug>/')
@@ -253,11 +246,13 @@ def edit_page(uid, slug):
 
 @app.route('/<uid>/<slug>/action/move/', methods=['POST', 'GET'])
 def move_page(uid, slug):
-    pass
+    if slug in ['__home','__private']:
+        abort(404)
 
 @app.route('/<uid>/<slug>/action/delete/', methods=['POST', 'GET'])
 def delete_page(uid, slug):
-    pass
+    if slug in ['__home','__private']:
+        abort(404)
 
 def render_page_view(page, rev_num=None):
 
