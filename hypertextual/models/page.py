@@ -50,7 +50,7 @@ class Page(Base):
         if self.slug == '__home':
             url = '/%s' % self.acct.uid
         elif self.slug == '__private':
-            url = '/~%s' % self.acct.uid
+            url = '/_%s' % self.acct.uid
         else:
             url = '/%s/%s' % (self.acct.uid, self.slug)
         if rev_num is not None and rev_num != self.curr_rev_num:

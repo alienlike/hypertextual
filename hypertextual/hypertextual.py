@@ -27,12 +27,12 @@ templates = None
 # /api/...                  --> api handler
 # /static/...               --> static file
 # /<uid>                    --> user home page
-# /~<uid>                   --> user private home page
+# /_<uid>                   --> user private home page
 # /<uid>/file/...           --> user file (e.g., images)
 # /<uid>/account/...        --> account page
 # /<uid>/<slug>             --> user page
 # /<uid>/action/...         --> home page action
-# /~<uid>/action/...        --> private home page action
+# /_<uid>/action/...        --> private home page action
 # /<uid>/<slug>/action/...  --> page action
 
 @app.route('/')
@@ -188,7 +188,7 @@ def create_page(uid):
         return handle_page_create(acct, title)
 
 @app.route('/<uid>/', defaults={'slug': '__home'})
-@app.route('/~<uid>/', defaults={'slug': '__private'})
+@app.route('/_<uid>/', defaults={'slug': '__private'})
 @app.route('/<uid>/<slug>/')
 def view_page(uid, slug):
 
@@ -220,7 +220,7 @@ def view_page(uid, slug):
     return render_page_view(page, rev_num)
 
 @app.route('/<uid>/action/edit/', defaults={'slug': '__home'}, methods=['POST', 'GET'])
-@app.route('/~<uid>/action/edit/', defaults={'slug': '__private'}, methods=['POST', 'GET'])
+@app.route('/_<uid>/action/edit/', defaults={'slug': '__private'}, methods=['POST', 'GET'])
 @app.route('/<uid>/<slug>/action/edit/', methods=['POST', 'GET'])
 def edit_page(uid, slug):
 
