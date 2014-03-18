@@ -10,7 +10,7 @@
             <span class="page-title" tal:content="page.title">title</span>
             <tal:block condition="page.curr_rev_num==rev_num and g.current_user and g.current_user.uid==page.acct.uid">
                 <!-- edit link -->
-                - <a tal:attributes="href '%s?action=edit' % page.get_url()">Edit</a>
+                - <a tal:attributes="href '%s/action/edit' % page.get_url()">Edit</a>
             </tal:block>
             <tal:block condition="page.curr_rev_num!=rev_num">
                 <!-- link to latest revision -->

@@ -76,7 +76,7 @@ class Link(Base):
                 classes.append('link-does-not-exist')
         except NoResultFound:
             if page_uid == current_uid and link_uid == current_uid:
-                url = '/%s?action=create&title=%s' % (current_uid, title)
+                url = '/%s/action/create?title=%s' % (current_uid, title)
                 classes.append('link-create-page')
             else:
                 url = '#'

@@ -26,6 +26,31 @@ class TestAccount(AlchemyTestBase):
     def setUp(self):
         self.acct = Account.new('scott', 'tiger', 'scott@gmail.com')
 
+    def test_get_by_uid(self):
+        acct = Account.get_by_uid('scott')
+        self.assertIsInstance(acct, Account)
+        self.assertEqual('scott', acct.uid)
+        self.assertIs(acct, self.acct)
+
+    def test_get_all(self):
+        Account.new('sally', 'secret', 'sally@gmail.com')
+        all_accts = Account.get_all()
+        self.assertEqual(2, len(all_accts))
+        self.assertIsInstance(all_accts[0], Account)
+        self.assertIsInstance(all_accts[1], Account)
+
+    def test_uid_exists(self):
+        scott_exists = Account.uid_exists('scott')
+        sally_exists = Account.uid_exists('sally')
+        self.assertTrue(scott_exists)
+        self.assertFalse(sally_exists)
+
+    def test_email_exists(self):
+        scott_exists = Account.email_exists('scott@gmail.com')
+        sally_exists = Account.email_exists('sally@gmail.com')
+        self.assertTrue(scott_exists)
+        self.assertFalse(sally_exists)
+
     def test_new(self):
         self.assertIsInstance(self.acct, Account)
         self.assertEqual('scott', self.acct.uid)
@@ -43,7 +68,7 @@ class TestAccount(AlchemyTestBase):
         self.assertEqual('Home', page.title)
 
     def test_get_page_by_name(self):
-        page = self.acct.get_page_by_slug('_private')
+        page = self.acct.get_page_by_slug('__private')
         self.assertIsInstance(page, Page)
         self.assertEqual('Private Home', page.title)
 
@@ -78,6 +103,11 @@ class TestPage(AlchemyTestBase):
         self.assertFalse(self.page.private)
         self.assertIs(self.page.acct, self.acct)
         self.assertEqual(0, len(self.page.revs))
+
+    def test_new_reserved_name(self):
+        page = Page.new(self.acct, 'Action')
+        self.assertEqual('Action', page.title)
+        self.assertEqual('action-1', page.slug)
 
     def test_user_is_owner(self):
         acct2 = Account.new('sally', 'secret', 'sally@gmail.com')
@@ -191,6 +221,13 @@ class TestPage(AlchemyTestBase):
         self.assertIsNone(self.page.draft_rev_num)
         self.assertIsNotNone(self.page.curr_rev_num)
         self.assertEqual(1, len(self.page.revs))
+
+    def test_revert_draft_rev(self):
+        self.page.save_draft_rev('book list sample text', True)
+        self.page.revert_draft_rev()
+        self.assertIsNone(self.page.draft_rev_num)
+        self.assertIsNone(self.page.curr_rev_num)
+        self.assertEqual(0, len(self.page.revs))
 
     def test_save_draft_rev_revised(self):
         self.page.save_draft_rev('book list sample text', True)
@@ -391,9 +428,9 @@ class TestLink(AlchemyTestBase):
         md_elem = link.get_link_markdown_elem('scott')
         self.assertEqual('[[Record Collection]]', link_text)
         self.assertEqual('[[0]]', ph_text)
-        self.assertEqual('<a href="/scott?action=create&title=Record Collection" class="link-create-page">Record Collection</a>', link_html)
+        self.assertEqual('<a href="/scott/action/create?title=Record Collection" class="link-create-page">Record Collection</a>', link_html)
         self.assertEqual('Record Collection', md_elem.text)
-        self.assertEqual('/scott?action=create&title=Record Collection', md_elem.get('href'))
+        self.assertEqual('/scott/action/create?title=Record Collection', md_elem.get('href'))
         self.assertEqual('link-create-page', md_elem.get('class'))
 
     def test_link_to_other(self):

@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from db import Base, db_session
 from rev import Revision
+from reserved import reserved_page_names
 
 class Page(Base):
 
@@ -46,11 +47,12 @@ class Page(Base):
         return allow
 
     def get_url(self, rev_num=None):
-        # start with uid
-        url = '/%s' % self.acct.uid
-        if self.slug is not None:
-            # add page name if required
-            url += '/%s' % self.slug
+        if self.slug == '__home':
+            url = '/%s' % self.acct.uid
+        elif self.slug == '__private':
+            url = '/_%s' % self.acct.uid
+        else:
+            url = '/%s/%s' % (self.acct.uid, self.slug)
         if rev_num is not None and rev_num != self.curr_rev_num:
             # add rev num if required
             url += '?rev=%s' % rev_num
@@ -81,6 +83,13 @@ class Page(Base):
         rev.rev_num = 0 if self.curr_rev_num is None else self.curr_rev_num + 1
         self.draft_rev_num = rev.rev_num
         return rev
+
+    def revert_draft_rev(self):
+        rev = self.get_draft_rev()
+        if rev:
+            rev.page = None
+            db_session.delete(rev)
+            self.draft_rev_num = None
 
     def publish_draft_rev(self):
         self.curr_rev_num = self.draft_rev_num
@@ -143,14 +152,14 @@ class Page(Base):
             pass
 
         # ensure uniqueness of name
-        exists = lambda s: Page.query.\
+        exists = lambda s: s in reserved_page_names or Page.query.\
             filter(Page.slug==s).\
-            filter(Page.acct==acct).count()
+            filter(Page.acct==acct).count() > 1
         slug_to_test = slug
         i = 1
         while exists(slug_to_test):
-            i+=1
             slug_to_test = '%s-%s' % (slug, i)
+            i+=1
         slug = slug_to_test
 
         return slug

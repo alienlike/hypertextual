@@ -2,6 +2,7 @@ from flaskext.bcrypt import generate_password_hash, check_password_hash
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import exists
 from db import Base, db_session
 from page import Page
 
@@ -54,6 +55,30 @@ class Account(Base):
         return page
 
     @classmethod
+    def get_by_uid(cls, uid):
+        acct = cls.query.filter(cls.uid==uid).first()
+        return acct
+
+    @classmethod
+    def get_all(cls):
+        accts = cls.query.order_by(cls.uid).all()
+        return accts
+
+    @classmethod
+    def uid_exists(cls, uid):
+        ex = db_session.query(
+            exists().where(cls.uid==uid)
+        ).scalar()
+        return ex
+
+    @classmethod
+    def email_exists(cls, email):
+        ex = db_session.query(
+            exists().where(cls.email==email)
+        ).scalar()
+        return ex
+
+    @classmethod
     def new(cls, uid, pw, email=None):
         acct = cls.__create_acct(uid, pw, email)
         cls.__create_home_page(acct)
@@ -76,7 +101,7 @@ class Account(Base):
         home_page_title = 'Home'
         home_page_text = 'Welcome to hypertextual. This is your home page.'
         home_page = Page.new(acct, home_page_title)
-        home_page.slug = None
+        home_page.slug = '__home'
         home_page.save_draft_rev(home_page_text, True)
         home_page.publish_draft_rev()
 
@@ -85,7 +110,7 @@ class Account(Base):
         private_home_page_title = 'Private Home'
         private_home_page_text = 'Welcome to hypertextual. This is your private home page.'
         private_home_page = Page.new(acct, private_home_page_title)
-        private_home_page.slug = '_private'
+        private_home_page.slug = '__private'
         private_home_page.private = True
         private_home_page.save_draft_rev(private_home_page_text, True)
         private_home_page.publish_draft_rev()
