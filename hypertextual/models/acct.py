@@ -20,7 +20,7 @@ class Account(Base):
     pw_hash = Column(String, nullable=False)
 
     # relationship
-    pages = relationship(Page, order_by='Page.id', backref='acct')
+    pages = relationship(Page, order_by='Page.id', cascade='all,delete-orphan', passive_deletes=True, backref='acct')
 
     def set_password(self, password):
         BCRYPT_COMPLEXITY = 12

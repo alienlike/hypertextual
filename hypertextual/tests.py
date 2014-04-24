@@ -109,6 +109,12 @@ class TestPage(AlchemyTestBase):
         self.assertEqual('Action', page.title)
         self.assertEqual('action-1', page.slug)
 
+    def test_title_exists(self):
+        book_list_exists = Page.title_exists(self.acct.uid, 'Book List')
+        self.assertTrue(book_list_exists)
+        movie_list_exists = Page.title_exists(self.acct.uid, 'Movie List')
+        self.assertFalse(movie_list_exists)
+
     def test_user_is_owner(self):
         acct2 = Account.new('sally', 'secret', 'sally@gmail.com')
         self.assertTrue(
@@ -247,7 +253,7 @@ class TestPage(AlchemyTestBase):
         self.assertEqual('Book List', redirect_page.title)
         self.assertEqual('book-list', redirect_page.slug)
         redirect_text = redirect_page.get_curr_rev().get_text()
-        self.assertEqual('This page has moved to: [[Reading List]]', redirect_text)
+        self.assertEqual('This page has moved: [[Reading List]]', redirect_text)
         self.assertFalse(moved_page.redirect)
         self.assertEqual('Reading List', moved_page.title)
         self.assertEqual('reading-list', moved_page.slug)
@@ -255,7 +261,6 @@ class TestPage(AlchemyTestBase):
         self.assertEqual('book list sample text', moved_text)
 
     def test_delete(self):
-        db_session.flush()
         Page.delete(self.page)
         page = self.acct.get_page_by_title('Book List')
         self.assertIsNone(page)
@@ -428,10 +433,10 @@ class TestLink(AlchemyTestBase):
         md_elem = link.get_link_markdown_elem('scott')
         self.assertEqual('[[Record Collection]]', link_text)
         self.assertEqual('[[0]]', ph_text)
-        self.assertEqual('<a href="/scott/action/create?title=Record Collection" class="link-create-page">Record Collection</a>', link_html)
+        self.assertEqual('<a href="/scott/action/create?title=Record Collection" class="link-create">Record Collection</a>', link_html)
         self.assertEqual('Record Collection', md_elem.text)
         self.assertEqual('/scott/action/create?title=Record Collection', md_elem.get('href'))
-        self.assertEqual('link-create-page', md_elem.get('class'))
+        self.assertEqual('link-create', md_elem.get('class'))
 
     def test_link_to_other(self):
         rev = self.sally_rev

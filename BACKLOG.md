@@ -2,8 +2,6 @@
 
 *functional prototype*
 
-- move/rename page
-- delete page
 - change password
 - vet naming constraints
 - cache current / draft text

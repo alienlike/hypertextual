@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, exists
 from sqlalchemy.orm import relationship
 from db import Base, db_session
 from rev import Revision
@@ -23,7 +23,7 @@ class Page(Base):
     redirect = Column(Boolean)
 
     # relationships
-    revs = relationship(Revision, order_by='Revision.id', backref='page', primaryjoin='Page.id==Revision.page_id')
+    revs = relationship(Revision, order_by='Revision.id', cascade='all,delete-orphan', passive_deletes=True, backref='page', primaryjoin='Page.id==Revision.page_id')
     acct = None #-> Account.pages
 
     def __init__(self):
@@ -87,8 +87,7 @@ class Page(Base):
     def revert_draft_rev(self):
         rev = self.get_draft_rev()
         if rev:
-            rev.page = None
-            db_session.delete(rev)
+            self.revs.remove(rev)
             self.draft_rev_num = None
 
     def publish_draft_rev(self):
@@ -106,6 +105,18 @@ class Page(Base):
         return page
 
     @classmethod
+    def title_exists(cls, uid, title):
+        from acct import Account
+        acct_page_join = db_session.query(Account).\
+            join(Account.pages).\
+            filter(Account.uid==uid).\
+            filter(cls.title==title)
+        page_exists = db_session.query(
+            acct_page_join.exists()
+        ).scalar()
+        return page_exists
+
+    @classmethod
     def move(cls, page, new_title, create_redirect=False):
         if new_title != page.title:
             old_title = page.title
@@ -116,15 +127,14 @@ class Page(Base):
                 redirected_page = cls.new(page.acct, old_title)
                 redirected_page.slug = old_slug
                 redirected_page.private = page.private
-                text = 'This page has moved to: [[%s]]' % new_title
+                text = 'This page has moved: [[%s]]' % new_title
                 redirected_page.save_draft_rev(text, use_markdown=True)
                 redirected_page.publish_draft_rev()
                 redirected_page.redirect = True
 
     @classmethod
     def delete(cls, page):
-        page.acct = None
-        db_session.delete(page)
+        page.acct.pages.remove(page)
 
     @classmethod
     def __sluggify(cls, acct, title):

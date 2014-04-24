@@ -246,13 +246,57 @@ def edit_page(uid, slug):
 
 @app.route('/<uid>/<slug>/action/move/', methods=['POST', 'GET'])
 def move_page(uid, slug):
+
+    # don't allow home or private home to be moved
     if slug in ['__home','__private']:
         abort(404)
 
+    # get account by uid; abort if not found
+    acct = Account.get_by_uid(uid)
+    if acct is None:
+        abort(404)
+
+    # get page by slug; abort if not found
+    page = acct.get_page_by_slug(slug)
+    if page is None:
+        abort(404)
+
+    # redirect any unauthorized user
+    if not page.user_is_owner(g.current_user):
+        return redirect_to_user_page(uid, slug)
+
+    # determine which renderer or handler to call
+    if request.method == 'GET':
+        return render_page_move(page)
+    elif request.method == 'POST':
+        return handle_page_move(page)
+
 @app.route('/<uid>/<slug>/action/delete/', methods=['POST', 'GET'])
 def delete_page(uid, slug):
+
+    # don't allow home or private home to be moved
     if slug in ['__home','__private']:
         abort(404)
+
+    # get account by uid; abort if not found
+    acct = Account.get_by_uid(uid)
+    if acct is None:
+        abort(404)
+
+    # get page by slug; abort if not found
+    page = acct.get_page_by_slug(slug)
+    if page is None:
+        abort(404)
+
+    # redirect any unauthorized user
+    if not page.user_is_owner(g.current_user):
+        return redirect_to_user_page(uid, slug)
+
+    # determine which renderer or handler to call
+    if request.method == 'GET':
+        return render_page_delete(page)
+    elif request.method == 'POST':
+        return handle_page_delete(page)
 
 def render_page_view(page, rev_num=None):
 
@@ -327,6 +371,80 @@ def handle_page_create(acct, title):
 
         # redirect to view page
         return redirect_to_user_page(acct.uid, page.slug)
+
+def render_page_move(page):
+    vals = {
+        'g': g,
+        'site_url': site_url,
+        'page': page,
+        'new_title': page.title,
+        'create_redirect': False,
+        'errors': {}
+    }
+    return render_template('page_move.html', **vals)
+
+def handle_page_move(page):
+
+    # get form values
+    new_title = request.form['new_title']
+    create_redirect = request.form.has_key('create_redirect')
+    cancel = request.form.has_key('cancel')
+
+    if cancel:
+        # redirect to view page
+        return redirect_to_user_page(page.acct.uid, page.slug)
+
+    valid = True
+    errors = {}
+    new_title_exists = Page.title_exists(page.acct.uid, new_title)
+
+    if new_title_exists:
+        valid = False
+        errors['new_title'] = 'A page by this title already exists'
+
+    if not valid:
+        # show validation errors
+        vals = {
+            'g': g,
+            'site_url': site_url,
+            'page': page,
+            'new_title': new_title,
+            'create_redirect': create_redirect,
+            'errors': errors
+        }
+        return render_template('page_move.html', **vals)
+
+    # move page
+    Page.move(page, new_title, create_redirect)
+
+    # redirect to view page
+    return redirect_to_user_page(page.acct.uid, page.slug)
+
+def render_page_delete(page):
+    vals = {
+        'g': g,
+        'site_url': site_url,
+        'page': page
+    }
+    return render_template('page_delete.html', **vals)
+
+def handle_page_delete(page):
+
+    # get form values
+    cancel = request.form.has_key('cancel')
+
+    if cancel:
+        # redirect to view page
+        return redirect_to_user_page(page.acct.uid, page.slug)
+
+    # delete page
+    uid = page.acct.uid
+    private = page.private
+    Page.delete(page)
+
+    # redirect to home or private home, depending on visibility of deleted page
+    target_slug = '__private' if private else '__home'
+    return redirect_to_user_page(uid, target_slug)
 
 def render_page_edit(page):
 

@@ -1,0 +1,23 @@
+<metal:main
+        xmlns:tal="http://xml.zope.org/namespaces/tal"
+        xmlns:metal="http://xml.zope.org/namespaces/metal"
+        use-macro="load: layout.html">
+    <tal:block metal:fill-slot="header">
+        <title><tal:block replace="page.title" /> - hypertextual</title>
+    </tal:block>
+    <tal:block metal:fill-slot="content">
+        <form method="post" id="pageEditForm">
+            <span class="page-title" tal:content="page.title">title</span>
+            <div style="margin-top: 10px;">
+                New title: <input type="text" name="new_title" tal:attributes="value new_title" />
+                <span class="error-message" tal:content="errors.get('new_title','')" /><br />
+                <input type="checkbox" id="create_redirect" name="create_redirect" value="True" tal:attributes="checked create_redirect" />
+                <label for="create_redirect">Create redirect</label>
+            </div>
+            <div style="margin-top: 10px;">
+                <input type="submit" name="move" value="Move page" />
+                <input type="submit" name="cancel" value="Cancel" />
+            </div>
+        </form>
+    </tal:block>
+</metal:main>
