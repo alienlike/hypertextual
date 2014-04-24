@@ -47,6 +47,14 @@ def site_home():
     }
     return render_template('index.html', **vals)
 
+@app.route('/site/docs/<title>', methods=['GET'])
+def read_doc(title):
+    file_name = '%s/%s.md' % (app_path, title)
+    if not os.path.isfile(file_name):
+        abort(404)
+    f = open(file_name)
+    md = f.read()
+
 @app.route('/site/login/', methods=['POST', 'GET'])
 def login():
 

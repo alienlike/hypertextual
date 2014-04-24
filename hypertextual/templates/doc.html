@@ -1,0 +1,8 @@
+<metal:main
+        xmlns:tal="http://xml.zope.org/namespaces/tal"
+        xmlns:metal="http://xml.zope.org/namespaces/metal"
+        use-macro="load: layout.html">
+    <tal:block metal:fill-slot="content">
+        <tal:block replace="structure doc_html"></tal:block>
+    </tal:block>
+</metal:main>
