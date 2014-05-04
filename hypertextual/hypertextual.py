@@ -2,6 +2,7 @@ import os, re, argparse
 from flask import Flask, request, session, g, redirect, url_for, abort
 from chameleon import PageTemplateLoader
 from sqlalchemy import create_engine
+from markdown import markdown
 from models import db_session, Page, Account
 from validate_email import validate_email
 from models import reserved_acct_names
@@ -47,13 +48,23 @@ def site_home():
     }
     return render_template('index.html', **vals)
 
-@app.route('/site/docs/<title>', methods=['GET'])
+@app.route('/site/docs/', defaults={'title': 'index'}, methods=['GET'])
+@app.route('/site/docs/<title>/', methods=['GET'])
 def read_doc(title):
-    file_name = '%s/%s.md' % (app_path, title)
+    file_name = '%s/docs/%s.md' % (app_path, title)
     if not os.path.isfile(file_name):
         abort(404)
-    f = open(file_name)
+    f = open(file_name, 'r')
     md = f.read()
+    doc_html = markdown(md)
+    f.close()
+    # show doc page
+    vals = {
+        'g': g,
+        'site_url': site_url,
+        'doc_html': doc_html
+    }
+    return render_template('doc.html', **vals)
 
 @app.route('/site/login/', methods=['POST', 'GET'])
 def login():
