@@ -48,6 +48,16 @@ def site_home():
     }
     return render_template('index.html', **vals)
 
+@app.route('/site/')
+@app.route('/api/')
+@app.route('/robots.txt/')
+@app.route('/favicon.ico/')
+@app.route('/sitemap.xml/')
+@app.route('/dublin.rdf/')
+@app.route('/opensearch.xml/')
+def reserved_names():
+    abort(404)
+
 @app.route('/site/docs/', defaults={'title': 'index'}, methods=['GET'])
 @app.route('/site/docs/<title>/', methods=['GET'])
 def read_doc(title):
@@ -504,14 +514,6 @@ def handle_page_edit(page):
 
     # redirect to view page
     return redirect_to_user_page(page.acct.uid, page.slug)
-
-@app.route('/robots.txt/')
-@app.route('/favicon.ico/')
-@app.route('/sitemap.xml/')
-@app.route('/dublin.rdf/')
-@app.route('/opensearch.xml/')
-def common_files():
-    abort(404)
 
 def redirect_to_site_home():
     url = url_for(site_home.__name__)
