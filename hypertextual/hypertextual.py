@@ -390,15 +390,15 @@ def render_page_view(page, rev_num=None):
 
 def render_page_create(acct, title):
 
-    # create a new page
-    page = Page.new(acct, title) # todo: do not use Page.new because the instance will get persisted
-    page.save_draft_rev('', True)
-
     # render the edit page
     vals = {
-        'page': page,
-        'rev': page.get_draft_rev(),
-        'acct': acct
+        'title': title,
+        'can_revert': False,
+        'private': False, # todo: derive from parent
+        'slug': '',
+        'use_markdown': True,
+        'text': '',
+        'page_uid': acct.uid,
     }
     return render_template('page_edit.html', **vals)
 
@@ -505,10 +505,15 @@ def render_page_edit(page):
 
     # render the edit page
     rev = page.get_draft_rev() or page.get_curr_rev()
+
     vals = {
-        'page': page,
-        'rev': rev,
-        'acct': page.acct
+        'title': page.title,
+        'can_revert': page.draft_rev_num is not None,
+        'private': page.private,
+        'slug': page.slug,
+        'use_markdown': rev.use_markdown,
+        'text': rev.get_text(),
+        'page_uid': page.acct.uid,
     }
     return render_template('page_edit.html', **vals)
 

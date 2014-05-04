@@ -3,26 +3,26 @@
     xmlns:metal="http://xml.zope.org/namespaces/metal"
     use-macro="load: layout.html">
     <tal:block metal:fill-slot="header">
-        <title><tal:block replace="page.title" /> - hypertextual</title>
+        <title><tal:block replace="title" /> - hypertextual</title>
     </tal:block>
     <tal:block metal:fill-slot="content">
         <form method="post" id="pageEditForm">
-            <span class="page-title" tal:content="page.title">title</span>
+            <span class="page-title" tal:content="title">title</span>
             <div style="margin-top: 10px;">
                 <span>
                     <button type="submit" name="save_draft">Save Draft</button>
                     <button type="submit" name="publish">Publish</button>
-                    <button type="submit" name="revert" tal:condition="page.draft_rev_num is not None">Revert</button>
+                    <button type="submit" name="revert" tal:condition="can_revert">Revert</button>
                     <button type="submit" name="cancel">Cancel</button>
                 </span>
                 <span style="float: right;">
-                    <input type="checkbox" id="private" name="private" tal:attributes="checked page.private; disabled page.slug in ['__home', '__private']"><label for="private">Private</label>
-                    <input type="radio" id="markdown" name="use_markdown" value="True" tal:attributes="checked rev.use_markdown"><label for="markdown">Markdown</label>
-                    <input type="radio" id="plaintext" name="use_markdown" value="False" tal:attributes="checked not rev.use_markdown"><label for="plaintext">Plain text</label>
+                    <input type="checkbox" id="private" name="private" tal:attributes="checked private; disabled slug in ['__home', '__private']"><label for="private">Private</label>
+                    <input type="radio" id="markdown" name="use_markdown" value="True" tal:attributes="checked use_markdown"><label for="markdown">Markdown</label>
+                    <input type="radio" id="plaintext" name="use_markdown" value="False" tal:attributes="checked not use_markdown"><label for="plaintext">Plain text</label>
                 </span>
             </div>
             <div id="pageEditArea">
-                <textarea id="text" name="text" tal:content="rev.get_text()"></textarea>
+                <textarea id="text" name="text" tal:content="text"></textarea>
             </div>
         </form>
     </tal:block>

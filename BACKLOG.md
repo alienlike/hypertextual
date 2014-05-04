@@ -1,8 +1,5 @@
 ##Hypertextual backlog
 
-*known bugs*
-- content gets lost when saving a brand new page as draft
-
 *features*
 
 - option to update links on page move
