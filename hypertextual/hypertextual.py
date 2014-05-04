@@ -22,18 +22,18 @@ templates = None
 # /sitemap.xml
 # /dublin.rdf
 # /opensearch.xml
-# /site/...                 --> site page
-# /site/admin/...           --> admin page
-# /site/docs/...            --> documentation page
+# /admin/...                --> admin page
 # /api/...                  --> api handler
+# /docs/...                 --> documentation page
+# /site/...                 --> site page or action
 # /static/...               --> static file
 # /<uid>                    --> user home page
 # /_<uid>                   --> user private home page
-# /<uid>/file/...           --> user file (e.g., images)
 # /<uid>/account/...        --> account page
-# /<uid>/<slug>             --> user page
 # /<uid>/action/...         --> home page action
 # /_<uid>/action/...        --> private home page action
+# /<uid>/file/...           --> user file (e.g., images)
+# /<uid>/<slug>             --> user page
 # /<uid>/<slug>/action/...  --> page action
 
 @app.route('/')
@@ -56,8 +56,8 @@ def site_home():
 def reserved_names():
     abort(404)
 
-@app.route('/site/docs/', defaults={'title': 'index'}, methods=['GET'])
-@app.route('/site/docs/<title>/', methods=['GET'])
+@app.route('/docs/', defaults={'title': 'index'}, methods=['GET'])
+@app.route('/docs/<title>/', methods=['GET'])
 def read_doc(title):
     file_name = '%s/docs/%s.md' % (app_path, title)
     if not os.path.isfile(file_name):
