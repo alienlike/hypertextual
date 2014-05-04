@@ -38,15 +38,21 @@ templates = None
 
 @app.route('/')
 def site_home():
-    # get users
-    accts = Account.query.order_by(Account.uid).all()
-    # show index page
+    md_path = '%s/index.md' % app_path
+    doc_html = get_html_from_markdown_file(md_path, '')
+    accts = _get_user_list_for_site_home()
     vals = {
+        'doc_html': doc_html,
         'accts': accts
     }
     return render_template('index.html', **vals)
 
+def _get_user_list_for_site_home():
+    accts = Account.query.order_by(Account.uid).all()
+    return accts
+
 @app.route('/site/')
+@app.route('/admin/')
 @app.route('/api/')
 @app.route('/robots.txt/')
 @app.route('/favicon.ico/')
@@ -59,14 +65,10 @@ def reserved_names():
 @app.route('/docs/', defaults={'title': 'index'}, methods=['GET'])
 @app.route('/docs/<title>/', methods=['GET'])
 def read_doc(title):
-    file_name = '%s/docs/%s.md' % (app_path, title)
-    if not os.path.isfile(file_name):
+    md_path = '%s/docs/%s.md' % (app_path, title)
+    doc_html = get_html_from_markdown_file(md_path)
+    if doc_html is None:
         abort(404)
-    f = open(file_name, 'r')
-    md = f.read()
-    doc_html = markdown(md)
-    f.close()
-    # show doc page
     vals = {
         'doc_html': doc_html
     }
@@ -502,6 +504,14 @@ def redirect_to_site_home():
 def redirect_to_user_page(uid, slug):
     url = url_for(view_page.__name__, uid=uid, slug=slug)
     return redirect(url)
+
+def get_html_from_markdown_file(md_path, default=None):
+    doc_html = default
+    if os.path.isfile(md_path):
+        with open(md_path, 'r') as f:
+            md = f.read()
+            doc_html = markdown(md)
+    return doc_html
 
 def render_template(template_name, **vals):
     vals['g'] = vals.get('g', g)
