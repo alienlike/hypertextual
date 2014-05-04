@@ -131,7 +131,8 @@ def create_acct():
 
         # check whether uid or email already exist
         uid_exists = Account.uid_exists(uid)
-        email_exists = email and Account.email_exists(email)
+        email_valid = email and validate_email(email)
+        email_exists = email_valid and Account.email_exists(email)
 
         reserved_names = reserved_acct_names + app.config['RESERVED_ACCT_NAMES']
         uid_re = r'^([a-zA-Z][a-zA-Z0-9]*)$'
@@ -145,12 +146,12 @@ def create_acct():
         elif uid in reserved_names or uid_exists:
             valid = False
             errors['uid'] = 'Username is not available. Please try another.'
-        if email_exists:
-            valid = False
-            errors['email'] = 'Email already in use. Please use another.'
-        elif email and not validate_email(email):
+        if not email_valid:
             valid = False
             errors['email'] = 'Invalid email address.'
+        elif email_exists:
+            valid = False
+            errors['email'] = 'Email already in use. Please use another.'
         if not pw:
             valid = False
             errors['pw'] = 'Please provide a password.'

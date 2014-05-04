@@ -2,13 +2,10 @@
 
 *functional prototype*
 
-- vet naming constraints
 - cache current / draft text
 - specify sqlalchemy string lengths
 - use sqlalchemy text type for patches
 - improve slug generator
-- get relative imports working
-- home/about/faq/tutorial
 
 *features*
 
@@ -30,11 +27,14 @@
 
 *public access*
 
+- home/about/faq/tutorial
+- update email address
 - reset password by email
 - confirm email on account creation
 
 *someday maybe*
 
+- get relative imports working
 - export/import
 - full-text search
 - ajax-based editing

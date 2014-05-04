@@ -16,7 +16,7 @@ class Account(Base):
     create_ts = Column(DateTime, nullable=False, default=datetime.now)
 
     uid = Column(String, unique=True, nullable=False)
-    email = Column(String, unique=True)
+    email = Column(String, unique=True, nullable=False)
     pw_hash = Column(String, nullable=False)
 
     # relationship
