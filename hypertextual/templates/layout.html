@@ -3,6 +3,7 @@
       xmlns:tal="http://xml.zope.org/namespaces/tal"
       xmlns:metal="http://xml.zope.org/namespaces/metal">
 <head>
+    <script type="text/javascript" tal:attributes="src '%s/static/jquery-1.9.1.min.js' % site_url"></script>
     <link rel="stylesheet" type="text/css" tal:attributes="href '%s/static/styles.css' % site_url">
     <tal:block metal:define-slot="header"></tal:block>
 </head>
