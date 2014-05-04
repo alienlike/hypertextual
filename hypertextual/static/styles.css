@@ -52,6 +52,10 @@ a.link-external {
     margin-top: 20px;
 }
 
+span.success {
+    color: green;
+}
+
 #userLinks {
     float: right;
 }

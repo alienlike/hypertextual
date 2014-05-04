@@ -92,7 +92,7 @@ def login():
             valid = acct.validate_password(pw)
             if valid:
                 # add account to session
-                session['current_user'] = acct
+                session['current_uid'] = acct.uid
                 g.current_user = acct
                 # redirect to user home
                 return redirect_to_user_page(uid, '__home')
@@ -106,7 +106,7 @@ def login():
 
 @app.route('/site/logout/')
 def logout():
-    del session['current_user']
+    del session['current_uid']
     g.current_user = None
     return redirect_to_site_home()
 
@@ -162,10 +162,9 @@ def create_acct():
 
             # create account
             acct = Account.new(uid, pw, email)
-            db_session.commit() # or weird stuff will happen
 
             # add account to session (effectively log the new user in)
-            session['current_user'] = acct
+            session['current_uid'] = acct.uid
             g.current_user = acct
 
             # redirect to new home page
@@ -180,9 +179,51 @@ def create_acct():
     }
     return render_template('create_acct.html', **vals)
 
-@app.route('/<uid>/account/reset-password/', methods=['POST', 'GET'])
-def reset_password(uid):
-    pass
+@app.route('/<uid>/account/change-password/', methods=['POST', 'GET'])
+def change_password(uid):
+
+    # redirect to home page if unauthorized user
+    if not g.current_user or uid != g.current_user.uid:
+        return redirect_to_user_page(uid, '__home')
+
+    # set default form values
+    curr_pw = ''
+    new_pw = ''
+    pconfirm = ''
+    errors = {}
+    valid = True
+    success = False
+
+    if request.method == 'POST':
+
+        # get request args
+        curr_pw = request.form['curr_pw']
+        new_pw = request.form['new_pw']
+        pconfirm = request.form['pconfirm']
+
+        # validate new_pw
+        if not new_pw:
+            valid = False
+            errors['new_pw'] = 'Please provide a password.'
+        elif new_pw != pconfirm:
+            valid = False
+            errors['pconfirm'] = 'Does not match new password.'
+        else:
+            valid = g.current_user.reset_password(curr_pw, new_pw)
+            if not valid:
+                errors['curr_pw'] = 'Invalid password.'
+            else:
+                success = True
+
+    vals = {
+        'curr_pw': curr_pw,
+        'new_pw': new_pw,
+        'pconfirm': pconfirm,
+        'errors': errors,
+        'valid': valid,
+        'success': success,
+    }
+    return render_template('change_password.html', **vals)
 
 @app.route('/<uid>/action/create/', methods=['POST', 'GET'])
 def create_page(uid):
@@ -526,12 +567,11 @@ def before_request():
     g.current_user = _get_current_user_from_session()
 
 def _get_current_user_from_session():
-    # retrieve current_user from session, where it is kept between requests
-    current_user = session.get('current_user', None)
-    if current_user:
-        # current_user will have been detached from its db session in a prior request;
-        # merge it with the current db session to avoid a DetachedInstanceError
-        current_user = db_session.merge(current_user)
+    # retrieve current_uid from session, where it is kept between requests
+    current_uid = session.get('current_uid', None)
+    current_user = None
+    if current_uid:
+        current_user = Account.get_by_uid(current_uid)
     return current_user
 
 @app.teardown_request

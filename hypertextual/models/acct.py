@@ -31,7 +31,7 @@ class Account(Base):
         valid = self.validate_password(old_password)
         if valid:
             self.set_password(new_password)
-        return valid
+        return valid # todo: use exception instead of return value
 
     def validate_password(self, password):
         # validate the password

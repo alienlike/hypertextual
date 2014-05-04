@@ -2,7 +2,6 @@
 
 *functional prototype*
 
-- change password
 - vet naming constraints
 - cache current / draft text
 - specify sqlalchemy string lengths

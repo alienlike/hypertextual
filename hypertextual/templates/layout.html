@@ -19,9 +19,12 @@
             <a tal:attributes="href '%s/site/login' % site_url">Log in</a> or
             <a tal:attributes="href '%s/site/create-account' % site_url">Create account</a>
         </tal:block>
-        <a tal:condition="g.current_user is not None" tal:attributes="href '%s/site/logout' % site_url">
-            Log out <tal:block content="g.current_user.uid"></tal:block>
-        </a>
+        <tal:block condition="g.current_user is not None">
+            <a tal:attributes="href '%s/%s/account/change-password' % (site_url, g.current_user.uid)">Change password</a> |
+            <a tal:attributes="href '%s/site/logout' % site_url">
+                Log out <tal:block content="g.current_user.uid"></tal:block>
+            </a>
+        </tal:block>
     </div>
     <hr />
     <div class="margin-above">

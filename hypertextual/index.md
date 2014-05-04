@@ -1,1 +1,1 @@
-Welcome!
+Welcome! [Read the docs](docs/) to get started.
