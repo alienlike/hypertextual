@@ -15,9 +15,9 @@ class Link(Base):
     create_ts = Column(DateTime, nullable=False, default=datetime.now)
 
     link_num = Column(Integer, nullable=False)
-    tgt_page_uid = Column(String)
-    tgt_page_title = Column(String, nullable=False)
-    tgt_page_alias = Column(String)
+    tgt_page_uid = Column(String(64))
+    tgt_page_title = Column(String(1024), nullable=False)
+    tgt_page_alias = Column(String(1024)) # todo: put some check in place to deal with longer aliases
 
     # relationships
     rev = None #-> Revision.links

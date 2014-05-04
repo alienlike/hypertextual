@@ -15,9 +15,9 @@ class Account(Base):
     id = Column(Integer, primary_key=True, nullable=False)
     create_ts = Column(DateTime, nullable=False, default=datetime.now)
 
-    uid = Column(String, unique=True, nullable=False)
-    email = Column(String, unique=True, nullable=False)
-    pw_hash = Column(String, nullable=False)
+    uid = Column(String(64), unique=True, nullable=False)
+    email = Column(String(128), unique=True, nullable=False)
+    pw_hash = Column(String(60), nullable=False)
 
     # relationship
     pages = relationship(Page, order_by='Page.id', cascade='all,delete-orphan', passive_deletes=True, backref='acct')

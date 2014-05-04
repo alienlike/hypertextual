@@ -9,7 +9,7 @@
         <form method="post" id="pageEditForm">
             <span class="page-title" tal:content="page.title">title</span>
             <div style="margin-top: 10px;">
-                New title: <input type="text" name="new_title" tal:attributes="value new_title" />
+                New title: <input type="text" name="new_title" tal:attributes="value new_title" maxlength="1024" />
                 <span class="error-message" tal:content="errors.get('new_title','')" /><br />
                 <input type="checkbox" id="create_redirect" name="create_redirect" value="True" tal:attributes="checked create_redirect" />
                 <label for="create_redirect">Create redirect</label>
