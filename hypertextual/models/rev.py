@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 from markdown import markdown
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from diff_match_patch.diff_match_patch import diff_match_patch
 from db import Base, db_session
@@ -19,7 +19,7 @@ class Revision(Base):
     create_ts = Column(DateTime, nullable=False, default=datetime.now)
 
     rev_num = Column(Integer, nullable=False)
-    patch_text = Column(String)
+    patch_text = Column(Text)
     use_markdown = Column(Boolean, nullable=False)
 
     # relationships

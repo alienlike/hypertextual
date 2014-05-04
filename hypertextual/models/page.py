@@ -1,5 +1,7 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, exists
+import re
+import translitcodec
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from db import Base, db_session
 from rev import Revision
@@ -15,8 +17,8 @@ class Page(Base):
     acct_id = Column(Integer, ForeignKey('acct.id', ondelete='CASCADE'), nullable=False)
     create_ts = Column(DateTime, default=datetime.now)
 
-    slug = Column(String) # http://hypertextual/<slug>
-    title = Column(String)
+    slug = Column(String(128)) # http://hypertextual/<slug>
+    title = Column(String(1024)) # todo: put some check in place to deal with longer titles
     curr_rev_num = Column(Integer)
     draft_rev_num = Column(Integer)
     private = Column(Boolean)
@@ -99,7 +101,7 @@ class Page(Base):
     def new(cls, acct, title):
         page = cls()
         page.title = title
-        page.slug = cls.__sluggify(acct, title)
+        page.slug = cls.__slugify(acct, title)
         acct.pages.append(page)
         db_session.add(page)
         return page
@@ -111,10 +113,22 @@ class Page(Base):
             join(Account.pages).\
             filter(Account.uid==uid).\
             filter(cls.title==title)
-        page_exists = db_session.query(
+        title_exists = db_session.query(
             acct_page_join.exists()
         ).scalar()
-        return page_exists
+        return title_exists
+
+    @classmethod
+    def slug_exists(cls, uid, slug):
+        from acct import Account
+        acct_page_join = db_session.query(Account).\
+            join(Account.pages).\
+            filter(Account.uid==uid).\
+            filter(cls.slug==slug)
+        slug_exists = db_session.query(
+            acct_page_join.exists()
+        ).scalar()
+        return slug_exists
 
     @classmethod
     def move(cls, page, new_title, create_redirect=False):
@@ -122,7 +136,7 @@ class Page(Base):
             old_title = page.title
             old_slug = page.slug
             page.title = new_title
-            page.slug = cls.__sluggify(page.acct, new_title)
+            page.slug = cls.__slugify(page.acct, new_title)
             if create_redirect:
                 redirected_page = cls.new(page.acct, old_title)
                 redirected_page.slug = old_slug
@@ -137,37 +151,27 @@ class Page(Base):
         page.acct.pages.remove(page)
 
     @classmethod
-    def __sluggify(cls, acct, title):
+    def __slugify(cls, acct, title):
 
-        # build a page name from the valid characters in the page name,
-        # removing any single quotes and substituting dashes for everything else
-        valid_chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-        slug = ''
-        for char in title.lower():
-            if char in valid_chars:
-                slug += char
-            elif char == "'":
-                continue
-            elif not slug.endswith('-'):
-                slug += "-"
-        slug = slug.strip('-')
+        # refer to http://flask.pocoo.org/snippets/5/
+        punct_re = re.compile(r'[\t !"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.]+')
+        delim = u'-'
+        result = []
+        for word in punct_re.split(title.lower()):
+            word = word.encode('translit/long')
+            if word:
+                result.append(word)
+        slug = unicode(delim.join(result))
 
-        # limit to 100 chars
-        slug = slug[:100].strip('-')
+        # todo: deal with the case where generated slug is an empty string
 
-        # prepend underscore to numeric name
-        try:
-            slug = '_%s' % int(slug)
-        except ValueError:
-            pass
+        # limit to 120 chars
+        slug = slug[:120].strip('-')
 
         # ensure uniqueness of name
-        exists = lambda s: s in reserved_page_names or Page.query.\
-            filter(Page.slug==s).\
-            filter(Page.acct==acct).count() > 1
         slug_to_test = slug
         i = 1
-        while exists(slug_to_test):
+        while slug_to_test in reserved_page_names or Page.slug_exists(acct.uid, slug_to_test):
             slug_to_test = '%s-%s' % (slug, i)
             i+=1
         slug = slug_to_test

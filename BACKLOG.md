@@ -1,11 +1,7 @@
 ##Hypertextual backlog
 
-*functional prototype*
-
-- cache current / draft text
-- specify sqlalchemy string lengths
-- use sqlalchemy text type for patches
-- improve slug generator
+*known bugs*
+- content gets lost when saving a brand new page as draft
 
 *features*
 
@@ -19,9 +15,9 @@
 
 *styles*
 
+- bootstrap / responsive layout
 - link styles: create/does not exist/redirected/private
 - monospace font in editor
-- bootstrap / responsive layout
 - larger edit area
 - always keep header/footer visible
 
@@ -34,6 +30,7 @@
 
 *someday maybe*
 
+- cache current / draft text (memcached?)
 - get relative imports working
 - export/import
 - full-text search
