@@ -42,8 +42,6 @@ def site_home():
     accts = Account.query.order_by(Account.uid).all()
     # show index page
     vals = {
-        'g': g,
-        'site_url': site_url,
         'accts': accts
     }
     return render_template('index.html', **vals)
@@ -70,8 +68,6 @@ def read_doc(title):
     f.close()
     # show doc page
     vals = {
-        'g': g,
-        'site_url': site_url,
         'doc_html': doc_html
     }
     return render_template('doc.html', **vals)
@@ -101,8 +97,6 @@ def login():
 
     # show the login form
     vals = {
-        'g': g,
-        'site_url': site_url,
         'uid': uid,
         'pw': pw
     }
@@ -176,8 +170,6 @@ def create_acct():
             return redirect_to_user_page(uid, '__home')
 
     vals = {
-        'g': g,
-        'site_url': site_url,
         'uid': uid,
         'email': email,
         'pw': pw,
@@ -346,8 +338,6 @@ def render_page_view(page, rev_num=None):
 
     # return the rendered page template
     vals = {
-        'g': g,
-        'site_url': site_url,
         'page': page,
         'rev_num': rev_num,
         'page_html': page_html
@@ -362,8 +352,6 @@ def render_page_create(acct, title):
 
     # render the edit page
     vals = {
-        'g': g,
-        'site_url': site_url,
         'page': page,
         'rev': page.get_draft_rev(),
         'acct': acct
@@ -403,8 +391,6 @@ def handle_page_create(acct, title):
 
 def render_page_move(page):
     vals = {
-        'g': g,
-        'site_url': site_url,
         'page': page,
         'new_title': page.title,
         'create_redirect': False,
@@ -434,8 +420,6 @@ def handle_page_move(page):
     if not valid:
         # show validation errors
         vals = {
-            'g': g,
-            'site_url': site_url,
             'page': page,
             'new_title': new_title,
             'create_redirect': create_redirect,
@@ -451,8 +435,6 @@ def handle_page_move(page):
 
 def render_page_delete(page):
     vals = {
-        'g': g,
-        'site_url': site_url,
         'page': page
     }
     return render_template('page_delete.html', **vals)
@@ -480,8 +462,6 @@ def render_page_edit(page):
     # render the edit page
     rev = page.get_draft_rev() or page.get_curr_rev()
     vals = {
-        'g': g,
-        'site_url': site_url,
         'page': page,
         'rev': rev,
         'acct': page.acct
@@ -524,6 +504,8 @@ def redirect_to_user_page(uid, slug):
     return redirect(url)
 
 def render_template(template_name, **vals):
+    vals['g'] = vals.get('g', g)
+    vals['site_url'] = vals.get('site_url', site_url)
     template = templates[template_name]
     return template.render(**vals)
 
@@ -558,11 +540,7 @@ def teardown_appcontext(exception=None):
 
 @app.errorhandler(404)
 def page_not_found(e):
-    vals = {
-        'g': g,
-        'site_url': site_url
-    }
-    return render_template('404.html', **vals), 404
+    return render_template('404.html'), 404
 
 ##### app setup routine
 
