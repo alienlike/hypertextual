@@ -606,7 +606,14 @@ def main():
     _set_globals()
     command_line_args = _get_command_line_args()
     app_options = _get_app_options(command_line_args)
+    _set_up_logging()
     app.run(**app_options)
+
+def wsgi_main():
+    _configure_flask_app()
+    _configure_db_session()
+    _set_globals()
+    _set_up_logging()
 
 def _configure_flask_app():
     app.config.from_object('config')
@@ -667,5 +674,19 @@ def _get_static_files_for_reload_mode():
                         static_files.append(file_name)
     return static_files
 
+def _set_up_logging():
+    if not app.debug:
+        import logging
+        from logging.handlers import RotatingFileHandler
+        log_dir = os.path.join(app_path, 'log')
+        if not os.path.exists(log_dir):
+            os.mkdir(log_dir)
+        filename = os.path.join(log_dir, 'hypertextual.log')
+        file_handler = RotatingFileHandler(filename, maxBytes=102400, backupCount=10)
+        file_handler.setLevel(logging.WARNING)
+        app.logger.addHandler(file_handler)
+
 if __name__ == '__main__':
     main()
+else:
+    wsgi_main()

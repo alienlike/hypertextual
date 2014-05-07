@@ -1,4 +1,5 @@
 venv
+log
 *.swp
 .idea
 
