@@ -1,3 +1,1 @@
-docs home
-
-[About](about)
+Nothing here just yet!
