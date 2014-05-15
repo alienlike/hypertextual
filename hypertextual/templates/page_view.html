@@ -6,21 +6,21 @@
         <title><tal:block replace="page.title" /> - <tal:block replace="page.acct.uid" /> - hypertextual</title>
     </tal:block>
     <tal:block metal:fill-slot="content">
-        <div>
+        <span>
             <span class="page-title" tal:content="page.title">title</span>
             <tal:block condition="page.curr_rev_num!=rev_num">
                 <!-- link to latest revision -->
                 - <a tal:attributes="href page.get_url()">Go to latest revision</a>
             </tal:block>
-            <div style="margin-top: 10px;" tal:condition="page.curr_rev_num==rev_num and g.current_user and g.current_user.uid==page.acct.uid">
-                <span>
-                    <button type="button" tal:attributes="onclick 'location.href=\'%s/action/edit\'' % page.get_url()">Edit</button>
-                </span>
-                <tal:block condition="page.slug not in ['__home','__private']">
-                    <button type="button" tal:attributes="onclick 'location.href=\'%s/action/move\'' % page.get_url()">Move</button>
-                    <button type="button" tal:attributes="onclick 'location.href=\'%s/action/delete\'' % page.get_url()">Delete</button>
-                </tal:block>
-            </div>
+        </span>
+        <div id="pageViewButtons" tal:condition="page.curr_rev_num==rev_num and g.current_user and g.current_user.uid==page.acct.uid">
+            <span>
+                <button type="button" tal:attributes="onclick 'location.href=\'%s/action/edit\'' % page.get_url()">Edit</button>
+            </span>
+            <tal:block condition="page.slug not in ['__home','__private']">
+                <button type="button" tal:attributes="onclick 'location.href=\'%s/action/move\'' % page.get_url()">Move</button>
+                <button type="button" tal:attributes="onclick 'location.href=\'%s/action/delete\'' % page.get_url()">Delete</button>
+            </tal:block>
         </div>
         <div>
             <tal:block replace="structure page_html"></tal:block>

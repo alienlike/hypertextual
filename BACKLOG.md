@@ -2,12 +2,15 @@
 
 *features*
 
+- proper breadcrumb mechanism
+- add title to all pages
+- ability to preview before publishing
+- 'save draft' should not leave edit mode
 - option to update links on page move
 - orphaned page index
 - convert urls to hyperlinks
 - try to parse hypertextual urls
 - user-defined header/footer/menu
-- preview pane
 - revision index
 
 *styles*

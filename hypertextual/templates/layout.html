@@ -11,6 +11,12 @@
     <a tal:attributes="href site_url">hypertextual</a>
     <tal:block tal:condition="exists:page_uid">
         / <a tal:attributes="href '%s/%s' % (site_url, page_uid)" tal:content="page_uid"></a>
+        <!-- <tal:block condition="exists:page">
+            <tal:block condition="page.slug not in ['__home','__private']">
+                / <a tal:attributes="href page.get_url()" tal:content="page.title"></a>
+            </tal:block>
+            <span tal:condition="page.private" class="private-flag">(private)</span>
+        </tal:block> -->
     </tal:block>
     <div id="userLinks">
         <tal:block condition="g.current_user is None">

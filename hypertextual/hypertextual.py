@@ -383,8 +383,9 @@ def render_page_view(page, rev_num=None):
     # return the rendered page template
     vals = {
         'page': page,
+        'page_uid': page.acct.uid,
         'rev_num': rev_num,
-        'page_html': page_html
+        'page_html': page_html,
     }
     return render_template('page_view.html', **vals)
 
@@ -436,6 +437,7 @@ def handle_page_create(acct, title):
 def render_page_move(page):
     vals = {
         'page': page,
+        'page_uid': page.acct.uid,
         'new_title': page.title,
         'create_redirect': False,
         'errors': {}
@@ -465,6 +467,7 @@ def handle_page_move(page):
         # show validation errors
         vals = {
             'page': page,
+            'page_uid': page.acct.uid,
             'new_title': new_title,
             'create_redirect': create_redirect,
             'errors': errors
@@ -479,7 +482,8 @@ def handle_page_move(page):
 
 def render_page_delete(page):
     vals = {
-        'page': page
+        'page': page,
+        'page_uid': page.acct.uid,
     }
     return render_template('page_delete.html', **vals)
 
