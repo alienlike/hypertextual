@@ -1,11 +1,22 @@
 ##Hypertextual backlog
 
-*features*
+*follow-up release*
 
+- fix broken styling on 404 page
+- site name config key (i.e., "hypertextu.al")
 - proper breadcrumb mechanism
 - add title to all pages
 - ability to preview before publishing
 - 'save draft' should not leave edit mode
+- link styles: create/does not exist/redirected/private
+- clearly identify private pages
+- default to private any page created from private page link
+- home/about/faq/tutorial
+- remove plaintext option
+
+*features*
+
+- auto save draft
 - option to update links on page move
 - orphaned page index
 - convert urls to hyperlinks
@@ -16,20 +27,22 @@
 *styles*
 
 - bootstrap / responsive layout
-- link styles: create/does not exist/redirected/private
 - monospace font in editor
 - larger edit area
 - always keep header/footer visible
 
 *public access*
 
-- home/about/faq/tutorial
+- ssl
 - update email address
 - reset password by email
 - confirm email on account creation
+- delete account
+- suggestion box
 
 *someday maybe*
 
+- markdown editor
 - cache current / draft text (memcached?)
 - get relative imports working
 - export/import
