@@ -3,6 +3,7 @@ import re
 import translitcodec
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
+from breadcrumb import Breadcrumb
 from db import Base, db_session
 from rev import Revision
 from reserved import reserved_page_names
@@ -70,11 +71,17 @@ class Page(Base):
     def get_breadcrumb(self):
         breadcrumb = []
         if not self.private:
-            breadcrumb.append((self.acct.uid, '/%s' % self.acct.uid))
+            breadcrumb.append(
+                Breadcrumb(self.acct.uid, '/%s' % self.acct.uid)
+            )
         else:
-            breadcrumb.append(('_%s' % self.acct.uid, '/_%s' % self.acct.uid))
+            breadcrumb.append(
+                Breadcrumb('_%s' % self.acct.uid, '/_%s' % self.acct.uid)
+            )
         if self.slug not in ['__private','__home']:
-            breadcrumb.append((self.title, self.get_url()))
+            breadcrumb.append(
+                Breadcrumb(self.title, self.get_url())
+            )
         return breadcrumb
 
     def get_curr_rev(self):

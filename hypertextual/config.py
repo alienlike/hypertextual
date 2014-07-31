@@ -1,5 +1,6 @@
 import os
 
+SITE_NAME = os.environ.get('HYPERTEXTUAL_SITE_NAME', 'hypertextu.al')
 SITE_URL = os.environ.get('HYPERTEXTUAL_SITE_URL', 'http://localhost:5000')
 PORT = 5000 # does not apply to wsgi
 

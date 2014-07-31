@@ -2,14 +2,11 @@
 
 *follow-up release*
 
-- fix broken styling on 404 page
-- site name config key (i.e., "hypertextu.al")
 - proper breadcrumb mechanism
 - add title to all pages
 - ability to preview before publishing
 - 'save draft' should not leave edit mode
 - link styles: create/does not exist/redirected/private
-- clearly identify private pages
 - default to private any page created from private page link
 - home/about/faq/tutorial
 - remove plaintext option

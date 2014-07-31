@@ -3,13 +3,14 @@ from flask import Flask, request, session, g, redirect, url_for, abort
 from chameleon import PageTemplateLoader
 from sqlalchemy import create_engine
 from markdown import markdown
-from models import db_session, Page, Account
+from models import db_session, Page, Account, Breadcrumb
 from validate_email import validate_email
 from models import reserved_acct_names
 
 ##### globals
 
 app = Flask(__name__)
+site_name = None
 site_url = None
 app_path = None
 templates = None
@@ -67,10 +68,16 @@ def reserved_names():
 def read_doc(title):
     md_path = '%s/docs/%s.md' % (app_path, title)
     doc_html = get_html_from_markdown_file(md_path)
+    breadcrumb = [Breadcrumb('docs','%s/docs' % site_url)]
+    if title != 'index':
+        breadcrumb.append(
+            Breadcrumb(title,'%s/docs/%s' % (site_url, title))
+        )
     if doc_html is None:
         abort(404)
     vals = {
-        'doc_html': doc_html
+        'doc_html': doc_html,
+        'breadcrumb': breadcrumb,
     }
     return render_template('doc.html', **vals)
 
@@ -401,6 +408,7 @@ def render_page_create(acct, title):
         'use_markdown': True,
         'text': '',
         'page_uid': acct.uid,
+        'breadcrumb': acct.get_breadcrumb(),
     }
     return render_template('page_edit.html', **vals)
 
@@ -441,7 +449,8 @@ def render_page_move(page):
         'page_uid': page.acct.uid,
         'new_title': page.title,
         'create_redirect': False,
-        'errors': {}
+        'breadcrumb': page.get_breadcrumb(),
+        'errors': {},
     }
     return render_template('page_move.html', **vals)
 
@@ -471,7 +480,8 @@ def handle_page_move(page):
             'page_uid': page.acct.uid,
             'new_title': new_title,
             'create_redirect': create_redirect,
-            'errors': errors
+            'breadcrumb': page.get_breadcrumb(),
+            'errors': errors,
         }
         return render_template('page_move.html', **vals)
 
@@ -484,7 +494,8 @@ def handle_page_move(page):
 def render_page_delete(page):
     vals = {
         'page': page,
-        'page_uid': page.acct.uid,
+        'page_uid': page.acct.cuid,
+        'breadcrumb': page.get_breadcrumb(),
     }
     return render_template('page_delete.html', **vals)
 
@@ -519,6 +530,7 @@ def render_page_edit(page):
         'use_markdown': rev.use_markdown,
         'text': rev.get_text(),
         'page_uid': page.acct.uid,
+        'breadcrumb': page.get_breadcrumb(),
     }
     return render_template('page_edit.html', **vals)
 
@@ -567,6 +579,7 @@ def get_html_from_markdown_file(md_path, default=None):
 
 def render_template(template_name, **vals):
     vals['g'] = vals.get('g', g)
+    vals['site_name'] = vals.get('site_name', site_name)
     vals['site_url'] = vals.get('site_url', site_url)
     template = templates[template_name]
     return template.render(**vals)
@@ -629,10 +642,15 @@ def _configure_db_session():
     db_session.configure(bind=engine)
 
 def _set_globals():
-    global site_url, app_path, templates
+    global site_name, site_url, app_path, templates
+    site_name = _get_site_name()
     site_url = _get_site_url()
     app_path = _get_app_path()
     templates = _get_chameleon_templates()
+
+def _get_site_name():
+    site_name = app.config['SITE_NAME']
+    return site_name
 
 def _get_site_url():
     site_url = app.config['SITE_URL']

@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import exists
+from breadcrumb import Breadcrumb
 from db import Base, db_session
 from page import Page
 
@@ -42,6 +43,10 @@ class Account(Base):
     def validate_password(self, password):
         valid = check_password_hash(self.pw_hash, password)
         return valid
+
+    def get_breadcrumb(self):
+        breadcrumb = [Breadcrumb(self.uid, '/%s' % self.uid)]
+        return breadcrumb
 
     def new_page(self, title):
         page = Page.new(self, title)
