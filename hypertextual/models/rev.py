@@ -24,7 +24,13 @@ class Revision(Base):
 
     # relationships
     page = None #-> Page.revs
-    links = relationship(Link, order_by='Link.link_num', cascade='all,delete-orphan', passive_deletes=True, backref='rev')
+    links = relationship(
+        Link,
+        order_by='Link.link_num',
+        cascade='all,delete-orphan',
+        passive_deletes=True,
+        backref='rev'
+    )
 
     def render_to_html(self, current_uid):
         if self.use_markdown:

@@ -20,21 +20,26 @@ class Account(Base):
     pw_hash = Column(String(60), nullable=False)
 
     # relationship
-    pages = relationship(Page, order_by='Page.id', cascade='all,delete-orphan', passive_deletes=True, backref='acct')
+    pages = relationship(
+        Page,
+        order_by='Page.title',
+        cascade='all,delete-orphan',
+        passive_deletes=True,
+        backref='acct'
+    )
 
     def set_password(self, password):
         BCRYPT_COMPLEXITY = 12
         self.pw_hash = generate_password_hash(password, BCRYPT_COMPLEXITY)
 
     def reset_password(self, old_password, new_password):
-        # first validate the old password, then set to the new password
+        # todo: raise exception if invalid password
         valid = self.validate_password(old_password)
         if valid:
             self.set_password(new_password)
-        return valid # todo: use exception instead of return value
+        return valid
 
     def validate_password(self, password):
-        # validate the password
         valid = check_password_hash(self.pw_hash, password)
         return valid
 
@@ -79,7 +84,7 @@ class Account(Base):
         return ex
 
     @classmethod
-    def new(cls, uid, pw, email=None):
+    def new(cls, uid, pw, email):
         acct = cls.__create_acct(uid, pw, email)
         cls.__create_home_page(acct)
         cls.__create_private_home_page(acct)
@@ -87,11 +92,9 @@ class Account(Base):
         return acct
 
     @classmethod
-    def __create_acct(cls, uid, pw, email=None):
+    def __create_acct(cls, uid, pw, email):
         acct = cls()
         acct.uid = uid
-        if not email:
-            email = None
         acct.email = email
         acct.set_password(pw)
         return acct
@@ -114,9 +117,3 @@ class Account(Base):
         private_home_page.private = True
         private_home_page.save_draft_rev(private_home_page_text, True)
         private_home_page.publish_draft_rev()
-
-    @staticmethod
-    def __parse_bcrypt_complexity(bcrypt_hash):
-        # see http://stackoverflow.com/a/6833165/204900
-        hash_complexity = int(bcrypt_hash.split('$')[2])
-        return hash_complexity

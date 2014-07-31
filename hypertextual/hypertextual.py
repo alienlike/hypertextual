@@ -386,6 +386,7 @@ def render_page_view(page, rev_num=None):
         'page_uid': page.acct.uid,
         'rev_num': rev_num,
         'page_html': page_html,
+        'breadcrumb': page.get_breadcrumb(),
     }
     return render_template('page_view.html', **vals)
 

@@ -25,8 +25,15 @@ class Page(Base):
     redirect = Column(Boolean)
 
     # relationships
-    revs = relationship(Revision, order_by='Revision.id', cascade='all,delete-orphan', passive_deletes=True, backref='page', primaryjoin='Page.id==Revision.page_id')
     acct = None #-> Account.pages
+    revs = relationship(
+        Revision,
+        order_by='Revision.id',
+        cascade='all,delete-orphan',
+        passive_deletes=True,
+        backref='page',
+        primaryjoin='Page.id==Revision.page_id'
+    )
 
     def __init__(self):
         self.curr_rev_num = None
@@ -59,6 +66,16 @@ class Page(Base):
             # add rev num if required
             url += '?rev=%s' % rev_num
         return url
+
+    def get_breadcrumb(self):
+        breadcrumb = []
+        if not self.private:
+            breadcrumb.append((self.acct.uid, '/%s' % self.acct.uid))
+        else:
+            breadcrumb.append(('_%s' % self.acct.uid, '/_%s' % self.acct.uid))
+        if self.slug not in ['__private','__home']:
+            breadcrumb.append((self.title, self.get_url()))
+        return breadcrumb
 
     def get_curr_rev(self):
         rev = None

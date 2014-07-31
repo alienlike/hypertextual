@@ -23,6 +23,7 @@ class Link(Base):
     rev = None #-> Revision.links
 
     def get_link_text(self):
+        # return link text in the form `[[uid::title|alias]]`
         link_text = '[['
         if self.tgt_page_uid:
             link_text += '%s::' % self.tgt_page_uid
@@ -33,6 +34,7 @@ class Link(Base):
         return link_text
 
     def get_placeholder_text(self):
+        # return link placeholder in the form `[[link_num]]`
         return '[[%s]]' % self.link_num
 
     def get_link_html(self, current_uid):
@@ -55,34 +57,42 @@ class Link(Base):
         return a
 
     def __get_link_components(self, current_uid):
+        # return a url, display text, and relevant css classes for this link
 
         from acct import Account
         from page import Page
 
-        # TODO: set classes for all conditions
-
-        title = self.tgt_page_title
         page_uid = self.rev.page.acct.uid
         link_uid = self.tgt_page_uid or page_uid
-        display_text = self.tgt_page_alias or self.tgt_page_title
-        classes = []
+        page = Page.query.\
+            join(Account.pages).\
+            filter(Page.title==self.tgt_page_title, Account.uid==link_uid).\
+            first()
 
-        try:
-            page = Page.query.join(Account.pages).filter(Page.title==title, Account.uid==link_uid).one()
-            if page.user_can_view(current_uid):
-                url = page.get_url()
-            else:
-                url = '#'
-                classes.append('link-does-not-exist')
-        except NoResultFound:
-            if page_uid == current_uid and link_uid == current_uid:
-                url = '/%s/action/create?title=%s' % (current_uid, title)
-                classes.append('link-create')
-            else:
-                url = '#'
-                classes.append('link-does-not-exist')
+        can_create = (page is None and page_uid == current_uid and link_uid == current_uid)
+        can_view = (page is not None and page.user_can_view(current_uid))
+
+        display_text = self.tgt_page_alias or self.tgt_page_title
+        url = self.__get_url_for_display(page, current_uid, can_create, can_view)
+        classes = self.__get_classes_for_display(can_create, can_view)
 
         return url, display_text, classes
+
+    def __get_url_for_display(self, page, current_uid, can_create, can_view):
+        url = '#'
+        if can_create:
+            url = '/%s/action/create?title=%s' % (current_uid, self.tgt_page_title)
+        elif can_view:
+            url = page.get_url()
+        return url
+
+    def __get_classes_for_display(self, can_create, can_view):
+        classes = []
+        if can_create:
+            classes.append('link-create')
+        elif not can_view:
+            classes.append('link-does-not-exist')
+        return classes
 
     @classmethod
     def new(cls, rev, link_num, uid, title, alias):
