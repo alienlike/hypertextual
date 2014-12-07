@@ -5,8 +5,8 @@
  */
 
 /*!
- * Generated using the Bootstrap Customizer (http://getbootstrap.com/customize/?id=e2edb7f8762a3bd053c7)
- * Config saved to config.json and https://gist.github.com/e2edb7f8762a3bd053c7
+ * Generated using the Bootstrap Customizer (http://getbootstrap.com/customize/?id=1210906e84125290afd5)
+ * Config saved to config.json and https://gist.github.com/1210906e84125290afd5
  */
 /*! normalize.css v3.0.2 | MIT License | git.io/normalize */
 html {
@@ -298,12 +298,12 @@ textarea {
   line-height: inherit;
 }
 a {
-  color: #337ab7;
+  color: #000000;
   text-decoration: none;
 }
 a:hover,
 a:focus {
-  color: #23527c;
+  color: #000000;
   text-decoration: underline;
 }
 a:focus {
@@ -2452,7 +2452,7 @@ fieldset[disabled] .btn-danger.active {
   background-color: #ffffff;
 }
 .btn-link {
-  color: #337ab7;
+  color: #000000;
   font-weight: normal;
   border-radius: 0;
 }
@@ -2473,7 +2473,7 @@ fieldset[disabled] .btn-link {
 }
 .btn-link:hover,
 .btn-link:focus {
-  color: #23527c;
+  color: #000000;
   text-decoration: underline;
   background-color: transparent;
 }
