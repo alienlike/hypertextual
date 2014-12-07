@@ -9,7 +9,6 @@
 - link styles: create/does not exist/redirected/private
 - default to private any page created from private page link
 - home/about/faq/tutorial
-- remove plaintext option
 
 *features*
 
@@ -23,8 +22,6 @@
 
 *styles*
 
-- bootstrap / responsive layout
-- monospace font in editor
 - larger edit area
 - always keep header/footer visible
 
@@ -39,9 +36,9 @@
 
 *someday maybe*
 
+- get relative imports working
 - markdown editor
 - cache current / draft text (memcached?)
-- get relative imports working
 - export/import
 - full-text search
 - ajax-based editing

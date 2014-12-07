@@ -5,43 +5,64 @@
 <head>
     <script type="text/javascript" tal:attributes="src '%s/static/jquery-1.9.1.min.js' % site_url"></script>
     <link rel="stylesheet" type="text/css" tal:attributes="href '%s/static/styles.css' % site_url">
+    <link rel="stylesheet" type="text/css" tal:attributes="href '%s/static/bootstrap/css/bootstrap.min.css' % site_url">
+    <link rel="stylesheet" type="text/css" tal:attributes="href '%s/static/bootstrap/css/bootstrap-theme.min.css' % site_url">
     <tal:block metal:define-slot="header"></tal:block>
 </head>
+
 <body>
+<div class="container" style="margin-top: 20px;">
 
-    <a tal:attributes="href site_url" tal:content="site_name">site_name</a>
+    <div class="row">
 
-    <!-- BEGIN BREADCRUMB -->
-    <tal:block condition="exists:breadcrumb">
-        <tal:block repeat="crumb breadcrumb">
-            / <a tal:attributes="href crumb.url" tal:content="crumb.text"></a>
-        </tal:block>
-        <tal:block condition="exists:page">
-            <span tal:condition="page.private" class="private-flag">(private)</span>
-        </tal:block>
-    </tal:block>
-    <!-- END BREADCRUMB -->
+        <div class="col-sm-8 col-md-6">
 
-    <!-- BEGIN LINKS -->
-    <div id="userLinks">
-        <tal:block condition="g.current_user is None">
-            <a tal:attributes="href '%s/site/login' % site_url">Log in</a> or
-            <a tal:attributes="href '%s/site/create-account' % site_url">Create account</a>
-        </tal:block>
-        <tal:block condition="g.current_user is not None">
-            <a tal:attributes="href '%s/%s/account/change-password' % (site_url, g.current_user.uid)">Change password</a> |
-            <a tal:attributes="href '%s/site/logout' % site_url">
-                Log out <tal:block content="g.current_user.uid"></tal:block>
-            </a>
-        </tal:block>
+            <a tal:attributes="href site_url" tal:content="site_name">site_name</a>
+
+            <!-- BEGIN BREADCRUMB LINKS -->
+            <tal:block condition="exists:breadcrumb">
+                <tal:block repeat="crumb breadcrumb">
+                    / <a tal:attributes="href crumb.url" tal:content="crumb.text"></a>
+                </tal:block>
+                <tal:block condition="exists:page">
+                    <span tal:condition="page.private" class="private-flag">(private)</span>
+                </tal:block>
+            </tal:block>
+            <!-- END BREADCRUMB LINKS -->
+
+        </div>
+
+        <div class="col-sm-4 col-md-3">
+            <div class="pull-right">
+                <!-- BEGIN USER LINKS -->
+                <tal:block condition="g.current_user is None">
+                    <a tal:attributes="href '%s/site/login' % site_url">Log in</a> or
+                    <a tal:attributes="href '%s/site/create-account' % site_url">Create account</a>
+                </tal:block>
+                <tal:block condition="g.current_user is not None">
+                    <a tal:attributes="href '%s/%s/account/change-password' % (site_url, g.current_user.uid)">Change password</a> |
+                    <a tal:attributes="href '%s/site/logout' % site_url">
+                        Log out <tal:block content="g.current_user.uid"></tal:block>
+                    </a>
+                </tal:block>
+                <!-- END USER LINKS -->
+            </div>
+        </div>
+
     </div>
-    <hr />
-    <!-- END LINKS -->
 
-    <!-- BEGIN CONTENT -->
-    <div class="margin-above">
-        <tal:block metal:define-slot="content"></tal:block>
+    <div class="row">
+
+        <div class="col-sm-12 col-md-9">
+
+            <!-- BEGIN CONTENT -->
+            <hr />
+            <tal:block metal:define-slot="content"></tal:block>
+            <!-- END CONTENT -->
+
+        </div>
+
     </div>
-    <!-- END CONTENT -->
 
+</div>
 </body>

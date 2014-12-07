@@ -6,24 +6,42 @@
         <title><tal:block replace="title" /> - hypertextual</title>
     </tal:block>
     <tal:block metal:fill-slot="content">
+
         <form method="post" id="pageEditForm">
-            <span class="page-title" tal:content="title">title</span>
-            <div style="margin-top: 10px;">
-                <span>
-                    <button type="submit" name="save_draft">Save Draft</button>
-                    <button type="submit" name="publish">Publish</button>
-                    <button type="submit" name="revert" tal:condition="can_revert">Revert</button>
-                    <button type="submit" name="cancel">Cancel</button>
-                </span>
-                <span style="float: right;">
-                    <input type="checkbox" id="private" name="private" tal:attributes="checked private; disabled slug in ['__home', '__private']"><label for="private">Private</label>
-                    <input type="radio" id="markdown" name="use_markdown" value="True" tal:attributes="checked use_markdown"><label for="markdown">Markdown</label>
-                    <input type="radio" id="plaintext" name="use_markdown" value="False" tal:attributes="checked not use_markdown"><label for="plaintext">Plain text</label>
-                </span>
+
+            <div class="row">
+                <div class="col-sm-12">
+                    <span class="page-title" tal:content="title">title</span>
+                </div>
+                <div class="col-sm-6">
+                    <span>
+                        <button type="submit" name="save_draft">Save Draft</button>
+                        <button type="submit" name="publish">Publish</button>
+                        <button type="submit" name="revert" tal:condition="can_revert">Revert</button>
+                        <button type="submit" name="cancel">Cancel</button>
+                    </span>
+                </div>
+                <div class="col-sm-6">
+                    <div class="pull-right">
+                        <input type="checkbox" id="private" name="private" tal:attributes="checked private; disabled slug in ['__home', '__private']">
+                        <label for="private">Private</label>
+                        <input type="radio" id="markdown" name="use_markdown" value="True" tal:attributes="checked use_markdown">
+                        <label for="markdown">Markdown</label>
+                        <input type="radio" id="plaintext" name="use_markdown" value="False" tal:attributes="checked not use_markdown">
+                        <label for="plaintext">Plain text</label>
+                    </div>
+                </div>
             </div>
-            <div id="pageEditArea">
-                <textarea id="text" name="text" tal:content="text"></textarea>
+
+            <div class="row">
+                <div class="col-sm-12">
+                    <div id="pageEditArea">
+                        <textarea id="text" name="text" tal:content="text"></textarea>
+                    </div>
+                </div>
             </div>
+
         </form>
+
     </tal:block>
 </metal:main>
