@@ -2,12 +2,11 @@
 
 *follow-up release*
 
-- proper breadcrumb mechanism
 - add title to all pages
+- default to private any page created from private page link
 - ability to preview before publishing
 - 'save draft' should not leave edit mode
 - link styles: create/does not exist/redirected/private
-- default to private any page created from private page link
 - home/about/faq/tutorial
 
 *features*
