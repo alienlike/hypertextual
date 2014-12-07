@@ -230,6 +230,7 @@ def change_password(uid):
         'errors': errors,
         'valid': valid,
         'success': success,
+        'breadcrumb': g.current_user.get_breadcrumb(),
     }
     return render_template('change_password.html', **vals)
 
