@@ -494,7 +494,7 @@ def handle_page_move(page):
 def render_page_delete(page):
     vals = {
         'page': page,
-        'page_uid': page.acct.cuid,
+        'page_uid': page.acct.uid,
         'breadcrumb': page.get_breadcrumb(),
     }
     return render_template('page_delete.html', **vals)
