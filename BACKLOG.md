@@ -2,13 +2,14 @@
 
 *follow-up release*
 
-- add title to all pages
+- visible links for home and private home
 - default to private any page created from private page link
 - ability to preview before publishing
 - 'save draft' should not leave edit mode
 - link styles: create/does not exist/redirected/private
+- fix regex for links: two links side-by-side are not parsed correctly
+- meaningful title for all pages
 - home/about/faq/tutorial
-- improve regex for links - two links side-by-side are not parsed correctly
 
 *features*
 
@@ -36,6 +37,7 @@
 
 *someday maybe*
 
+- modularize hypertextual.py
 - get relative imports working
 - markdown editor
 - cache current / draft text (memcached?)
