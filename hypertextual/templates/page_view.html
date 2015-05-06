@@ -3,7 +3,7 @@
     xmlns:metal="http://xml.zope.org/namespaces/metal"
     use-macro="load: layout.html">
     <tal:block metal:fill-slot="header">
-        <title><tal:block replace="page.title" /> - <tal:block replace="page.acct.uid" /> - hypertextual</title>
+        <title><tal:block replace="page.title" /> - <tal:block replace="page.acct.uid" /> - <tal:block replace="site_name" /></title>
     </tal:block>
     <tal:block metal:fill-slot="content">
 
